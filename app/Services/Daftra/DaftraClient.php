@@ -8,6 +8,8 @@ use RuntimeException;
 
 class DaftraClient
 {
+    public function __construct(private readonly DaftraAuthService $auth) {}
+
     public function http(): PendingRequest
     {
         $base = config('daftra.base_url');
@@ -22,7 +24,7 @@ class DaftraClient
             ->acceptJson()
             ->withHeaders([
                 'apikey' => $key,
-                'Authorization' => 'Bearer '.$key,
+                'Authorization' => 'Bearer '.$this->auth->token(),
             ]);
     }
 

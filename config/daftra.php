@@ -13,6 +13,21 @@ return [
     'timeout' => (int) env('DAFTRA_TIMEOUT', 30),
 
     /*
+    |--------------------------------------------------------------------------
+    | Daftra OAuth2 (v2) — required for the Authorization: Bearer header
+    |--------------------------------------------------------------------------
+    | Client ID/Secret: Settings → API Keys → "OAuth Credentials" block.
+    | Username/Password: your Daftra account login (owner or staff).
+    | Token URL is derived from DAFTRA_BASE_URL unless overridden.
+    */
+    'oauth_token_url' => env('DAFTRA_OAUTH_TOKEN_URL'),
+    'client_id' => env('DAFTRA_CLIENT_ID'),
+    'client_secret' => env('DAFTRA_CLIENT_SECRET'),
+    'username' => env('DAFTRA_USERNAME'),
+    'password' => env('DAFTRA_PASSWORD'),
+    'token_cache_ttl' => (int) env('DAFTRA_TOKEN_CACHE_TTL', 86000),
+
+    /*
     | Payment method key configured in Daftra (cash, bank, or custom).
     | Used when marking invoices paid after Fasah Pay callback.
     */

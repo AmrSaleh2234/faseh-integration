@@ -36,9 +36,13 @@ php artisan queue:work   # if you use ?queue=1
 | Variable | Where to get it |
 |----------|-----------------|
 | `DAFTRA_BASE_URL` | `https://YOUR_SUBDOMAIN.daftra.com/api2` |
-| `DAFTRA_API_KEY` | Daftra → Settings → API Keys |
+| `DAFTRA_API_KEY` | Daftra → Settings → API Keys (a named key row, e.g. "Fasah") |
+| `DAFTRA_CLIENT_ID` / `DAFTRA_CLIENT_SECRET` | Daftra → Settings → API Keys → "OAuth Credentials" block (account-wide, resettable) |
+| `DAFTRA_USERNAME` / `DAFTRA_PASSWORD` | Your Daftra account login — required for the OAuth2 password grant used to get the Bearer token |
 | `DAFTRA_PAYMENT_METHOD` | Payment method key in Daftra used when marking paid (e.g. `bank`) |
 | `APP_URL` | Your public HTTPS URL (required for callbacks) |
+
+> Daftra's `/api2` endpoints now require **both** an `apikey` header **and** a real OAuth2 `Authorization: Bearer <token>` (obtained via `POST {subdomain}/v2/oauth/token`, password grant). `DaftraAuthService` fetches and caches this token automatically using the OAuth credentials above.
 
 ### B) You must get from **Fasah Pay / ELM**
 
