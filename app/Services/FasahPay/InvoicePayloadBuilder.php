@@ -66,6 +66,7 @@ class InvoicePayloadBuilder
         }
 
         $payload = match ($type) {
+            'general' => $this->general($header, $meta, $invoice),
             'billoflading', 'bill_of_lading', 'bl' => $this->billOfLading($header, $meta),
             'declaration' => $this->declaration($header, $meta),
             'custombroker', 'customs_broker', 'broker' => $this->customBroker($header, $meta),
@@ -127,6 +128,37 @@ class InvoicePayloadBuilder
         }
 
         return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $header
+     * @param  array<string, mixed>  $meta
+     * @param  array<string, mixed>  $invoice
+     * @return array<string, mixed>
+     */
+    private function general(array $header, array $meta, array $invoice): array
+    {
+        $client = $invoice['Client'] ?? [];
+
+        $companyName = (string) ($meta['company_name_en']
+            ?? $client['business_name']
+            ?? trim(($client['first_name'] ?? '').' '.($client['last_name'] ?? ''))
+            ?: 'N/A');
+        $consumerEmail = (string) ($meta['consumer_email'] ?? $client['email'] ?? '');
+        $consumerMobile = (string) ($meta['consumer_mobile'] ?? $client['phone2'] ?? $client['phone1'] ?? '');
+
+        if ($consumerEmail === '' || $consumerMobile === '') {
+            throw new InvalidArgumentException(
+                'general invoice requires consumer_email and consumer_mobile (missing on Daftra Client and not passed via --bl-like meta overrides).'
+            );
+        }
+
+        return array_merge($header, [
+            'companyName' => $companyName,
+            'companyRegistrationNumber' => (string) ($meta['company_registration_number'] ?? ''),
+            'consumerEmail' => $consumerEmail,
+            'consumerMobile' => $consumerMobile,
+        ]);
     }
 
     /**
