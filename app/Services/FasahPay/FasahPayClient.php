@@ -106,6 +106,7 @@ class FasahPayClient
     private function pathForType(string $type): string
     {
         return match (strtolower($type)) {
+            'general' => '',
             'billoflading', 'bill_of_lading', 'bl' => '/billoflading',
             'declaration' => '/declaration',
             'custombroker', 'customs_broker', 'broker' => '/custombroker',
