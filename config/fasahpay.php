@@ -17,7 +17,7 @@ return [
         ),
         'invoice_base_url' => env(
             'FASAHPAY_SANDBOX_INVOICE_BASE_URL',
-            'https://qapigw.tabadul.sa/tabadul/qa/api/v1.1/FasahPay/invoices'
+            'https://qapigw.tabadul.sa/tabadul/qa/api/v1.1/fasahpay/invoices'
         ),
         'client_id' => env('FASAHPAY_SANDBOX_CLIENT_ID'),
         'client_secret' => env('FASAHPAY_SANDBOX_CLIENT_SECRET'),
@@ -32,7 +32,7 @@ return [
         ),
         'invoice_base_url' => env(
             'FASAHPAY_PRODUCTION_INVOICE_BASE_URL',
-            'https://apigw.tabadul.sa/tabadul/public/api/v1.1/FasahPay/invoices'
+            'https://apigw.tabadul.sa/tabadul/public/api/v1.1/fasahpay/invoices'
         ),
         'client_id' => env('FASAHPAY_PRODUCTION_CLIENT_ID'),
         'client_secret' => env('FASAHPAY_PRODUCTION_CLIENT_SECRET'),
