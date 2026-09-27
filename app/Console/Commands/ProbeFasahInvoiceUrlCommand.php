@@ -27,6 +27,11 @@ class ProbeFasahInvoiceUrlCommand extends Command
             preg_replace('#/invoices$#', '', preg_replace('#/v1\.1/#', '/v1/', $configuredBase)),
         ]);
 
+        $this->line('Client-Id header value : '.$cfg['client_id']);
+        $this->line('Client-Secret header    : '.substr($cfg['client_secret'], 0, 4).'****'.substr($cfg['client_secret'], -4));
+        $this->line('Authorization header    : Bearer '.substr($token, 0, 20).'...'.substr($token, -10));
+        $this->line('');
+
         $rows = [];
 
         foreach ($roots as $root) {
