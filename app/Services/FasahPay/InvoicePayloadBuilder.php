@@ -16,6 +16,7 @@ class InvoicePayloadBuilder
      */
     public function build(array $daftraInvoice, array $meta = []): array
     {
+        $daftraInvoice = $daftraInvoice['data'] ?? $daftraInvoice;
         $invoice = $daftraInvoice['Invoice'] ?? $daftraInvoice;
         $items = $daftraInvoice['InvoiceItem']
             ?? $daftraInvoice['InvoiceItems']
