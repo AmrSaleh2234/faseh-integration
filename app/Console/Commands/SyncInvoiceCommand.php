@@ -16,6 +16,9 @@ class SyncInvoiceCommand extends Command
         {--manifest-date= : Carrier manifest date Y-m-d}
         {--port= : Port code}
         {--shipment-type= : Shipment type lookup}
+        {--consumer-email= : Consumer email override (required for --type=general if missing on Daftra client)}
+        {--consumer-mobile= : Consumer mobile override (required for --type=general if missing on Daftra client)}
+        {--company-name= : Company name override (for --type=general)}
         {--force : Re-sync even if already synced}';
 
     protected $description = 'Sync one Daftra invoice to Fasah Pay';
@@ -30,6 +33,9 @@ class SyncInvoiceCommand extends Command
             'carrier_manifest_date' => $this->option('manifest-date'),
             'port' => $this->option('port'),
             'shipment_type' => $this->option('shipment-type'),
+            'consumer_email' => $this->option('consumer-email'),
+            'consumer_mobile' => $this->option('consumer-mobile'),
+            'company_name_en' => $this->option('company-name'),
             'force' => $this->option('force'),
         ], fn ($v) => $v !== null && $v !== '');
 
