@@ -394,6 +394,12 @@ class InvoicePayloadBuilder
 
     private function formatDate(mixed $value): string
     {
-        return Carbon::parse((string) $value)->format('Y-m-d');
+        $value = (string) $value;
+
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $value, $m)) {
+            return Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+        }
+
+        return Carbon::parse($value)->format('Y-m-d');
     }
 }
