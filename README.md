@@ -1,4 +1,19 @@
-# Daftra → Fasah Pay Bridge (Laravel)
+# Titanic Ways local app and Daftra → Fasah Pay bridge
+
+## Local application setup
+
+The dashboard, invoices, clients, staff, roles, and activity log use a local MySQL database. They do not send changes to Daftra or Fasah Pay. The bridge API described below remains separate.
+
+1. Create an empty MySQL database named `faseh_local` on localhost (or change `DB_DATABASE` in `.env`). Configure `DB_HOST`, `DB_PORT`, `DB_USERNAME`, and `DB_PASSWORD` for your local MySQL installation.
+2. Run `php artisan migrate --force` and `php artisan db:seed --force`. The seeder creates only the built-in roles and permissions; it does not import preview clients or invoices.
+3. Run `php artisan app:create-owner` in a terminal and answer the name, email, and password prompts. No default password is installed.
+4. Run `php artisan serve --port=8018` and sign in at `/login`.
+
+The Owner can create staff accounts and set their initial passwords. Staff members must change that password at first sign-in. Invoices are SAR-only in this version; issuing one never calls Daftra or Fasah. Payments are recorded manually on the invoice page. Uploaded files are stored privately and require authorization to download.
+
+Run `php artisan test` for the feature suite. The default suite uses an in-memory SQLite database; it can also run against a separate MySQL test database using `DB_CONNECTION=mysql DB_DATABASE=your_test_database php artisan test` after that test database has been created. Never point tests at the application database because the test runner refreshes its schema.
+
+## Daftra → Fasah Pay bridge
 
 Laravel middleware that:
 

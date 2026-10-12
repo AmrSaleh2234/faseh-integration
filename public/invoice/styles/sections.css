@@ -47,6 +47,169 @@
     width: 150px;
 }
 
+.deposit-panel.active,
+.insurance-panel.active {
+    align-items: flex-start;
+}
+
+.deposit-fields {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.deposit-fields .field {
+    width: 160px;
+}
+
+.deposit-fields .deposit-kind-label .field {
+    width: 180px;
+}
+
+.deposit-paid {
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+    margin-top: 3px;
+    color: #465568;
+    white-space: nowrap;
+}
+
+.deposit-paid input {
+    appearance: none;
+    width: 27px;
+    height: 15px;
+    border-radius: 9px;
+    background: #c7cedb;
+    cursor: pointer;
+    position: relative;
+}
+
+.deposit-paid input::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: white;
+}
+
+.deposit-paid input:checked {
+    background: #20b94f;
+}
+
+.deposit-paid input:checked::before {
+    right: auto;
+    left: 2px;
+}
+
+.insurance-panel .field {
+    width: 270px;
+}
+
+.documents-panel.active {
+    display: block;
+    padding: 0 20px 28px;
+}
+
+.document-tabs {
+    display: flex;
+    padding-top: 18px;
+    border-bottom: 1px solid #d8dfe8;
+}
+
+.document-tab {
+    border: 0;
+    background: transparent;
+    padding: 12px 18px;
+    color: #7885a5;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.document-tab.active {
+    background: white;
+    border: 1px solid #d8dfe8;
+    border-bottom-color: white;
+    margin-bottom: -1px;
+    color: #545f7d;
+}
+
+.document-content {
+    min-height: 135px;
+    padding: 28px 20px 10px;
+    border: 1px solid #d8dfe8;
+    border-top: 0;
+    color: #617087;
+}
+
+.document-content[hidden] {
+    display: none;
+}
+
+.upload-label {
+    display: block !important;
+    margin-bottom: 10px;
+}
+
+.upload-zone {
+    min-height: 80px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 5px !important;
+    border: 2px dashed #e2e8f0;
+    cursor: pointer;
+    color: #485468;
+}
+
+.upload-zone span,
+.upload-zone strong {
+    color: #0789e5;
+}
+
+.upload-zone span {
+    font-size: 23px;
+}
+
+.upload-zone.dragging {
+    border-color: #0789e5;
+    background: #f3f9ff;
+}
+
+.selected-attachments {
+    margin: 10px 0 0;
+    padding-right: 20px;
+}
+
+@media (max-width: 700px) {
+    .deposit-panel.active,
+    .insurance-panel.active {
+        flex-wrap: wrap;
+    }
+
+    .deposit-fields {
+        max-width: 100%;
+    }
+
+    .deposit-fields .field,
+    .deposit-fields .deposit-kind-label .field,
+    .insurance-panel .field {
+        width: 100%;
+    }
+
+    .documents-panel.active {
+        padding: 0 10px 18px;
+    }
+
+    .document-content {
+        padding: 15px 10px;
+    }
+}
+
 .notes {
     margin-top: 20px;
 }

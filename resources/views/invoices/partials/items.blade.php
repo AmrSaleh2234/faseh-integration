@@ -15,7 +15,9 @@
                 </tr>
             </thead>
             <tbody id="item-rows">
-                @include('invoices.partials.item-row')
+                @foreach(old('items',$invoice?->items?->toArray() ?: [[]]) as $item)
+                    @include('invoices.partials.item-row', ['item' => $item])
+                @endforeach
             </tbody>
         </table>
     </div>
@@ -31,5 +33,5 @@
 </section>
 
 <template id="item-row-template">
-    @include('invoices.partials.item-row')
+    @include('invoices.partials.item-row', ['item' => []])
 </template>

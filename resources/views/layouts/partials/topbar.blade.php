@@ -10,6 +10,7 @@
     <div class="account">
         <span>المساعدة ◉</span>
         <span>🔔</span>
-        <span>محمد القرني<br><small>12/10/2026 13:14</small></span>
+        <span>{{ auth()->user()->name }}<br><small>{{ now()->format('d/m/Y H:i') }}</small></span>
+        <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" class="topbar-logout">خروج</button></form>
     </div>
 </header>

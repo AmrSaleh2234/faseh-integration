@@ -1,17 +1,36 @@
 @extends('layouts.admin')
-@section('title', 'عرض العميل - Titanic ways')
+@section('title', 'عرض العميل - Titanic Ways')
 @section('section-name', 'العملاء')
 @section('page-name', 'عرض العميل')
 @push('styles')<link rel="stylesheet" href="{{ asset('clients.css') }}">@endpush
-@push('scripts')<script src="{{ asset('clients.js') }}" defer></script>@endpush
-@section('page-actions')
-<div class="actions client-show-actions"><div class="client-page-title"><strong>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</strong><span>#044</span><span class="status-badge">نشط</span></div><div class="client-balance"><small>الرصيد الافتتاحي</small><strong>57,492.50 SAR</strong></div><div class="client-balance"><small>الرصيد المستحق</small><strong>57,492.50 SAR</strong></div></div>
-@endsection
-@section('content')
-<section class="client-profile panel"><div class="client-profile-main"><span class="client-avatar color-0">م</span><div><h1>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</h1><p>⌖ الخبر</p></div></div><div class="client-profile-links"><span>✉ Ops@myfreight.biz</span><span>☎ +966 56 488 2976</span></div></section>
-<div class="client-toolbar"><a class="btn gray small" href="{{ route('clients.edit') }}">✎ تعديل</a><button type="button" class="btn gray small" data-local-action="إضافة ملاحظة">＋ ملاحظة / مرفق</button><button type="button" class="btn gray small" data-local-action="موعد">موعد</button><button type="button" class="btn gray small" data-local-action="بريد إلكتروني">بريد إلكتروني</button><a class="btn gray small" href="{{ route('invoices.create') }}">＋ فاتورة</a><button type="button" class="btn gray small" data-local-action="عرض سعر">عرض سعر</button><button type="button" class="btn gray small" data-local-action="كشف حساب">كشف حساب</button><button type="button" class="btn gray small" data-local-action="دفعة">دفعة</button></div>
-<section class="client-detail panel"><div class="client-tabs" role="tablist"><button class="active" role="tab" aria-selected="true" data-tab="details">التفاصيل</button><button role="tab" aria-selected="false" data-tab="invoices">الفواتير (3)</button><button role="tab" aria-selected="false" data-tab="payments">المدفوعات (2)</button><button role="tab" aria-selected="false" data-tab="transactions">حركة الحساب (5)</button><button role="tab" aria-selected="false" data-tab="messages">الرسائل المرسلة (3)</button><button role="tab" aria-selected="false" data-tab="timeline">الجدول الزمني</button><button role="tab" aria-selected="false" data-tab="activity">سجل النشاط</button></div>
-<div class="client-tab-panel active" id="tab-details" role="tabpanel"><div class="client-details-grid"><div><h2>بيانات العميل</h2><dl><dt>نوع العميل</dt><dd>تجاري</dd><dt>الاسم التجاري</dt><dd>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</dd><dt>المدينة</dt><dd>الخبر</dd><dt>الدولة</dt><dd>المملكة العربية السعودية</dd></dl></div><div><h2>بيانات الحساب</h2><dl><dt>كود العميل</dt><dd>#044</dd><dt>الحالة</dt><dd>نشط</dd><dt>العملة</dt><dd>SAR</dd><dt>الرصيد المستحق</dt><dd>57,492.50 SAR</dd></dl></div></div></div>
-@foreach(['invoices'=>'الفواتير','payments'=>'المدفوعات','transactions'=>'حركة الحساب','messages'=>'الرسائل المرسلة','timeline'=>'الجدول الزمني','activity'=>'سجل النشاط'] as $key=>$label)<div class="client-tab-panel" id="tab-{{ $key }}" role="tabpanel" hidden><h2>{{ $label }}</h2><p>لا توجد بيانات متاحة في المعاينة المحلية.</p></div>@endforeach
-</section><p class="client-notice" id="client-notice" role="status" hidden></p>
+@section('page-actions')<div class="actions client-show-actions"><div class="client-page-title"><strong>{{ $client->business_name }}</strong><span>#{{ $client->code }}</span></div>@can('invoices.view')<div class="client-balance"><small>الرصيد المستحق</small><strong>{{ number_format($client->invoices->sum(fn($invoice) => $invoice->balance),2) }} SAR</strong></div>
+@endcan
+</div>@endsection
+@section('content')<section class="client-profile panel"><div class="client-profile-main"><span class="client-avatar color-0">{{ mb_substr($client->business_name,0,1) }}</span><div><h1>{{ $client->business_name }}</h1><p>⌖ {{ $client->city }}</p></div></div><div class="client-profile-links"><span>{{ $client->email }}</span><span>{{ $client->mobile }}</span></div></section>
+<div class="client-toolbar">@can('clients.edit')<a class="btn gray small" href="{{ route('clients.edit',$client) }}">✎ تعديل</a>
+@endcan
+ @can('invoices.create')<a class="btn gray small" href="{{ route('invoices.create',['client_id'=>$client->id]) }}">＋ فاتورة</a>
+@endcan
+</div>
+<section class="client-detail panel" style="padding:24px"><h2>بيانات العميل</h2><dl class="client-details-grid"><div><dt>النوع</dt><dd>{{ $client->type === 'business' ? 'تجاري' : 'فردي' }}</dd><dt>المدينة</dt><dd>{{ $client->city ?: '—' }}</dd><dt>الدولة</dt><dd>{{ $client->country ?: '—' }}</dd></div><div><dt>الكود</dt><dd>#{{ $client->code }}</dd><dt>البريد</dt><dd>{{ $client->email ?: '—' }}</dd><dt>الهاتف</dt><dd>{{ $client->mobile ?: '—' }}</dd></div></dl>
+@can('invoices.view')
+<h2>الفواتير ({{ $client->invoices->count() }})</h2>@forelse($client->invoices as $invoice)<p><a href="{{ route('invoices.show',$invoice) }}">فاتورة #{{ $invoice->number ?? 'مسودة '.$invoice->id }}</a> — {{ $invoice->display_status }} — {{ number_format($invoice->total,2) }} SAR</p>
+@empty
+<p>لا توجد فواتير لهذا العميل.</p>
+@endforelse
+@endcan
+
+<h2>جهات الاتصال</h2>@forelse($client->contacts as $contact)<p>{{ $contact->name }} — {{ $contact->email }}</p>
+@empty
+<p>لا توجد جهات اتصال.</p>
+@endforelse
+
+<h2>المرفقات</h2>@forelse($client->attachments as $file)<p><a href="{{ route('attachments.download',$file) }}">{{ $file->original_name }}</a></p>
+@empty
+<p>لا توجد مرفقات.</p>
+@endforelse
+</section>
+@can('clients.delete')<form method="post" action="{{ route('clients.destroy',$client) }}" onsubmit="return confirm('أرشفة العميل؟')">@csrf @method('DELETE')<button class="btn gray small" type="submit">أرشفة العميل</button></form>
+@endcan
+
 @endsection

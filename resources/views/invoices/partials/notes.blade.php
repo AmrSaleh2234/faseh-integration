@@ -9,7 +9,7 @@
         <button data-command="insertOrderedList" type="button">≡</button>
     </div>
 
-    <div class="editor" id="notes" contenteditable="true" aria-label="الملاحظات والشروط">
+    <div class="editor" id="notes" contenteditable="true" aria-label="الملاحظات والشروط">@if($invoice?->notes){{ $invoice->notes }}@else
         <p>الرصيد المستحق : فقط &nbsp; {%unpaid_spelled%}</p>
 
         <div class="banks">
@@ -29,5 +29,5 @@
                 SAUDI NATIONAL BANK
             </div>
         </div>
-    </div>
+    @endif</div>
 </section>

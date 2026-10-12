@@ -38,7 +38,7 @@ export function initializeItems() {
 
         const discount = toNumber(discountField.value);
         const deduction = discountKind.value === 'percent' ? subtotal * discount / 100 : discount;
-        const total = Math.max(0, subtotal - deduction + toNumber(adjustmentField.value));
+        const total = Math.max(0, subtotal - deduction + toNumber(adjustmentField.value) + toNumber(document.getElementById('insurance-expenses')?.value));
 
         subtotalField.textContent = formatMoney(subtotal);
         totalField.textContent = formatMoney(total);
@@ -70,7 +70,7 @@ export function initializeItems() {
         calculate();
     });
 
-    [discountField, discountKind, adjustmentField].forEach(field => {
+    [discountField, discountKind, adjustmentField, document.getElementById('insurance-expenses')].filter(Boolean).forEach(field => {
         field.addEventListener('input', calculate);
         field.addEventListener('change', calculate);
     });

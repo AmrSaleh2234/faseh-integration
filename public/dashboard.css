@@ -1,0 +1,98 @@
+@import url('./invoice/styles/layout.css');
+@import url('./invoice/styles/responsive.css');
+
+[hidden] { display: none !important; }
+.dashboard-actions { color: #748095; font-size: 13px; }
+.dashboard-welcome { display: flex; justify-content: space-between; align-items: start; gap: 20px; padding: 12px 0 25px; }
+.dashboard-date { color: #8995a7; font-size: 13px; }
+.dashboard-welcome h1 { margin: 7px 0 5px; color: #666f90; font-size: 27px; line-height: 1.35; }
+.dashboard-welcome p { margin: 0; color: #7d8898; }
+.dashboard-preview-tag { background: #eaf8f2; color: #09865c; padding: 8px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; }
+.dashboard-searches { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.dashboard-search { padding: 11px 14px; display: flex; align-items: center; gap: 12px; }
+.dashboard-search label { color: #66738a; font-size: 13px; white-space: nowrap; }
+.dashboard-search div { flex: 1; display: flex; min-width: 0; }
+.dashboard-search input { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; color: #344154; }
+.dashboard-search button { border: 0; background: none; color: #8b99b0; font-size: 24px; cursor: pointer; }
+.dashboard-search:focus-within { border-color: #55afd4; box-shadow: 0 0 0 2px #d5edf7; }
+.dashboard-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.dashboard-shortcuts a { min-height: 104px; background: #f7f9fc; border: 1px solid #dce3eb; display: grid; place-content: center; justify-items: center; gap: 8px; color: #354255; }
+.dashboard-shortcuts a:hover { background: #fff; border-color: #9ec9da; transform: translateY(-1px); }
+.shortcut-icon { font-size: 25px; font-weight: 800; }
+.shortcut-icon.blue { color: #1485df; }.shortcut-icon.teal { color: #12a6b2; }.shortcut-icon.green { color: #16a86c; }.shortcut-icon.purple { color: #8296b4; }
+.dashboard-shortcuts strong { font-size: 14px; }
+.dashboard-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.dashboard-stat { display: grid; gap: 6px; padding: 15px 18px; border-top: 3px solid #d6e6ee; }
+.dashboard-stat:hover { border-color: #9bc9df; }
+.dashboard-stat span { color: #6f7e91; font-size: 12px; }
+.dashboard-stat strong { font-size: 24px; color: #334358; }
+.dashboard-stat small { color: #9aa6b4; }
+.dashboard-columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.dashboard-sales, .dashboard-aside .panel { overflow: hidden; }
+.dashboard-aside { display: grid; gap: 16px; }
+.dashboard-panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 17px 20px; border-bottom: 1px solid #e3e9ef; background: #f9fbfd; }
+.dashboard-kicker { color: #13a976; font-size: 11px; font-weight: 700; }
+.dashboard-panel-head h2 { margin: 3px 0 0; color: #3c4a5c; font-size: 17px; }
+.dashboard-panel-head a { color: #1688ba; white-space: nowrap; font-size: 12px; }
+.dashboard-panel-head a:hover { text-decoration: underline; }
+.dashboard-tabs { display: flex; border-bottom: 1px solid #dce4ec; background: #f5f7fa; }
+.dashboard-tabs button { padding: 12px 18px; border: 0; border-left: 1px solid #e0e6ec; background: none; color: #75829a; font-weight: 700; cursor: pointer; }
+.dashboard-tabs button.active { color: #3b5e80; background: #fff; box-shadow: inset 0 3px #24aada; }
+.dashboard-tabs button span { background: #e4ebf2; padding: 1px 7px; border-radius: 9px; margin-right: 3px; }
+.dashboard-tab-panel { padding: 20px; min-height: 300px; }
+.dashboard-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 27px; }
+.dashboard-amounts div { display: grid; gap: 7px; padding: 12px; background: #f7fafc; border: 1px solid #e5ebf1; }
+.dashboard-amounts span { color: #8290a1; font-size: 12px; }
+.dashboard-amounts strong { color: #34485c; font-size: 16px; white-space: nowrap; }
+.dashboard-chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 16px; color: #46566b; font-size: 12px; }
+.dashboard-chart-head div { display: flex; align-items: center; gap: 4px; color: #8290a1; white-space: nowrap; }
+.paid-dot, .unpaid-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.paid-dot { background: #27b9d6; }.unpaid-dot { background: #8898d1; margin-right: 7px; }
+.dashboard-chart { display: grid; gap: 17px; padding: 9px 0; }
+.dashboard-chart-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 90px; align-items: center; gap: 12px; color: #77869a; font-size: 12px; }
+.dashboard-chart-track { height: 23px; display: flex; background: #f1f5f8; border: 1px solid #e4eaf0; border-radius: 3px; overflow: hidden; }
+.dashboard-chart-track .paid { background: #27b9d6; }.dashboard-chart-track .unpaid { background: #8898d1; }
+.dashboard-chart-amount { text-align: left; color: #536277; }
+.dashboard-data-note { margin: 17px 0 0; color: #9aa5b2; font-size: 11px; }
+.dashboard-invoice-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 15px; align-items: center; padding: 14px 0; border-bottom: 1px solid #e7ecf1; }
+.dashboard-invoice-row:last-child { border-bottom: 0; }
+.dashboard-invoice-row > div { display: grid; gap: 3px; min-width: 0; }
+.dashboard-invoice-row strong { color: #344357; }
+.dashboard-invoice-row span:not(.dashboard-status), .dashboard-invoice-row small { color: #8290a0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-invoice-row a { color: #1685b4; }
+.dashboard-status { padding: 3px 7px; border-radius: 10px; width: fit-content; font-size: 11px; }
+.dashboard-status.paid { color: #0d8d5c; background: #e8f7ef; }.dashboard-status.unpaid { color: #b06a25; background: #fff2e4; }
+.dashboard-team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 17px; }
+.dashboard-team-grid a { display: grid; gap: 4px; text-align: center; padding: 17px 8px; background: #f7fafc; border: 1px solid #e6ecf1; }
+.dashboard-team-grid > div { display: grid; gap: 4px; text-align: center; padding: 17px 8px; background: #f7fafc; border: 1px solid #e6ecf1; }
+.dashboard-team-grid a:hover { border-color: #9bc9df; }
+.dashboard-team-grid strong { color: #344b60; font-size: 23px; }.dashboard-team-grid span { color: #8492a3; font-size: 12px; }
+.dashboard-activity-list { display: grid; }
+.dashboard-activity-entry { display: grid; grid-template-columns: 30px 1fr; gap: 9px; padding: 15px 18px; border-bottom: 1px solid #e9eef2; }
+.dashboard-activity-entry:last-child { border-bottom: 0; }
+.dashboard-activity-icon { width: 28px; height: 28px; border-radius: 50%; background: #e8f8f0; color: #0f9e6b; display: grid; place-items: center; }
+.dashboard-activity-entry strong { color: #425167; font-size: 12px; display: block; }
+.dashboard-activity-entry small { color: #93a0ad; font-size: 11px; }
+.dashboard-activity-empty { padding: 32px 16px; text-align: center; color: #8c99a8; }
+@media (max-width: 1100px) { .dashboard-columns { grid-template-columns: 1fr; }.dashboard-aside { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) {
+    .dashboard-welcome h1 { font-size: 21px; }
+    .dashboard-preview-tag { display: none; }
+    .dashboard-searches { grid-template-columns: 1fr; }
+    .dashboard-search { display: grid; gap: 6px; }
+    .dashboard-shortcuts { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .dashboard-shortcuts a { min-height: 88px; }
+    .dashboard-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .dashboard-aside { grid-template-columns: 1fr; }
+    .dashboard-panel-head { padding: 14px; }
+    .dashboard-tabs button { flex: 1; padding: 10px 6px; font-size: 11px; }
+    .dashboard-tab-panel { padding: 12px; }
+    .dashboard-amounts { gap: 5px; }
+    .dashboard-amounts div { padding: 7px; }
+    .dashboard-amounts strong { font-size: 11px; }
+    .dashboard-chart-head { display: block; }
+    .dashboard-chart-head div { margin-top: 8px; }
+    .dashboard-chart-row { grid-template-columns: 56px 1fr 65px; gap: 6px; font-size: 10px; }
+    .dashboard-invoice-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .dashboard-invoice-row a { grid-column: 1 / -1; }
+}

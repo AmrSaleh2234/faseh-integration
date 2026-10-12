@@ -1,19 +1,51 @@
 @extends('layouts.admin')
-@section('title', 'فاتورة رقم 146 - Titanic ways')
+@section('title', 'عرض الفاتورة - Titanic Ways')
 @section('section-name', 'الفواتير')
-@section('page-name', 'فاتورة #146')
+@section('page-name', $invoice->number ? 'فاتورة #'.$invoice->number : 'مسودة #'.$invoice->id)
 @push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}">@endpush
-@push('scripts')<script type="module" src="{{ asset('invoice-pages.js') }}"></script>@endpush
-
-@section('page-actions')
-<div class="actions invoice-view-actions"><div class="invoice-view-title"><div><h1>الفاتورة #146</h1><small>Journal #547</small></div><div><strong>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</strong><a href="{{ route('clients.show') }}">العميل: 044</a></div><span class="invoice-badge unpaid">غير مدفوعة</span></div><button class="btn blue" type="button" id="invoice-print">▣ طباعة</button></div>
-@endsection
-
+@section('page-actions')<div class="actions invoice-view-actions"><div class="invoice-view-title"><div><h1>{{ $invoice->number ? 'الفاتورة #'.$invoice->number : 'مسودة #'.$invoice->id }}</h1></div><div><strong>{{ $invoice->client?->business_name ?? 'بدون عميل' }}</strong></div><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span></div><button class="btn blue" type="button" onclick="window.print()">▣ طباعة</button></div>@endsection
 @section('content')
-<div class="invoice-view-toolbar"><a class="btn gray small" href="{{ route('invoices.edit') }}">تعديل</a><button type="button" class="btn gray small" data-invoice-action="إضافة عملية دفع">إضافة عملية دفع</button><button type="button" class="btn gray small" data-invoice-action="نسخ الفاتورة">نسخ</button><button type="button" class="btn gray small" data-invoice-action="إرسال الفاتورة">أرسل عبر</button></div>
-<div class="invoice-view-tabs" role="tablist"><button class="active" type="button" role="tab" aria-selected="true" data-invoice-tab="invoice">فاتورة</button><button type="button" role="tab" aria-selected="false" data-invoice-tab="details">التفاصيل</button><button type="button" role="tab" aria-selected="false" data-invoice-tab="activity">سجل النشاطات</button></div>
-<section class="invoice-view-panel" id="invoice-tab-invoice" role="tabpanel"><div class="issued-document-wrap">@include('invoices.partials.issued-document')</div></section>
-<section class="invoice-view-panel invoice-info-panel" id="invoice-tab-details" role="tabpanel" hidden><h2>تفاصيل الفاتورة</h2><dl><dt>رقم الفاتورة</dt><dd>146</dd><dt>تاريخ الفاتورة</dt><dd>11/10/2026</dd><dt>العميل</dt><dd>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</dd><dt>حالة الدفع</dt><dd>غير مدفوعة</dd><dt>الإجمالي</dt><dd>﷼ 57,492.50</dd><dt>الرصيد المستحق</dt><dd>﷼ 57,492.50</dd></dl></section>
-<section class="invoice-view-panel invoice-info-panel" id="invoice-tab-activity" role="tabpanel" hidden><h2>سجل النشاطات</h2><p>11/10/2026 — تم إرسال الفاتورة بواسطة المستخدم الحالي.</p></section>
-<p class="invoice-local-notice" id="invoice-action-notice" role="status" hidden></p>
+<div class="invoice-view-toolbar">@can('invoices.edit')<a class="btn gray small" href="{{ route('invoices.edit',$invoice) }}">تعديل</a>
+@endcan
+ @if($invoice->status === 'draft')@can('invoices.delete')<form method="post" action="{{ route('invoices.destroy',$invoice) }}" onsubmit="return confirm('حذف المسودة؟')">@csrf @method('DELETE')<button class="btn gray small" type="submit">حذف المسودة</button></form>
+@endcan
+
+@endif
+</div>
+<section class="invoice-view-panel invoice-info-panel panel"><h2>تفاصيل الفاتورة</h2><dl><dt>العميل</dt><dd>@if($invoice->client)@can('clients.view')<a href="{{ route('clients.show',$invoice->client) }}">{{ $invoice->client->business_name }}</a>
+@else
+{{ $invoice->client->business_name }}
+@endcan
+@else
+—
+@endif
+</dd><dt>التاريخ</dt><dd>{{ $invoice->invoice_date?->format('d/m/Y') ?? '—' }}</dd><dt>مسؤول المبيعات</dt><dd>{{ $invoice->salesStaff?->full_name ?? '—' }}</dd><dt>الحالة</dt><dd>{{ $invoice->display_status }}</dd><dt>الإجمالي</dt><dd>﷼ {{ number_format($invoice->total,2) }}</dd><dt>المدفوع</dt><dd>﷼ {{ number_format($invoice->amount_paid,2) }}</dd><dt>الرصيد</dt><dd>﷼ {{ number_format($invoice->balance,2) }}</dd></dl></section>
+<section class="invoice-view-panel invoice-info-panel panel"><h2>البنود</h2><div class="table-scroll"><table><thead><tr><th>البند</th><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة 1</th><th>الضريبة 2</th><th>الإجمالي</th></tr></thead><tbody>@forelse($invoice->items as $item)<tr><td>{{ $item->name }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format($item->unit_price,2) }}</td><td>{{ number_format($item->discount,2) }}</td><td>{{ $item->tax_one }}%</td><td>{{ $item->tax_two }}%</td><td>{{ number_format($item->line_total,2) }}</td></tr>
+@empty
+<tr><td colspan="8">لا توجد بنود.</td></tr>
+@endforelse
+</tbody></table></div></section>
+@if($invoice->customFields->isNotEmpty())<section class="invoice-view-panel invoice-info-panel panel"><h2>حقول مخصصة</h2><dl>@foreach($invoice->customFields as $field)<dt>{{ $field->name }}</dt><dd>{{ $field->value }}</dd>
+@endforeach
+</dl></section>
+@endif
+
+@if($invoice->notes)<section class="invoice-view-panel invoice-info-panel panel"><h2>الملاحظات</h2><p style="white-space:pre-wrap">{{ $invoice->notes }}</p></section>
+@endif
+
+<section class="invoice-view-panel invoice-info-panel panel"><h2>المدفوعات</h2>@forelse($invoice->payments as $payment)<p>{{ $payment->paid_on->format('d/m/Y') }} — {{ $payment->method }} — ﷼ {{ number_format($payment->amount,2) }} {{ $payment->reference }}</p>
+@empty
+<p>لا توجد دفعات.</p>
+@endforelse
+
+@if($invoice->status === 'issued' && $invoice->balance > 0)@can('invoices.pay')<form method="post" action="{{ route('invoices.payments.store',$invoice) }}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end">@csrf<label>المبلغ<input name="amount" type="number" min="0.01" max="{{ $invoice->balance }}" step="0.01" required></label><label>التاريخ<input name="paid_on" type="date" value="{{ now()->toDateString() }}" required></label><label>الطريقة<select name="method"><option>نقدًا</option><option>تحويل بنكي</option><option>أخرى</option></select></label><label>المرجع<input name="reference"></label><button class="btn green" type="submit">تسجيل دفعة</button></form>
+@endcan
+
+@endif
+</section>
+@if($invoice->attachments->isNotEmpty())<section class="invoice-view-panel invoice-info-panel panel"><h2>المرفقات</h2>@foreach($invoice->attachments as $file)<p><a href="{{ route('attachments.download',$file) }}">{{ $file->original_name }}</a></p>
+@endforeach
+</section>
+@endif
+
 @endsection

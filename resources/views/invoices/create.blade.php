@@ -16,14 +16,16 @@
     <div class="actions">
         <div class="action-buttons">
             <button class="btn blue" id="preview" type="button">◉ &nbsp; معاينة</button>
-            <button class="btn gray" id="save-draft" type="button">حفظ كمسودة</button>
+            <button class="btn gray" id="save-draft" type="submit" form="invoice-form" name="action" value="draft">حفظ كمسودة</button>
         </div>
 
-        <button class="btn green" id="save-invoice" type="button">حفظ دون طباعة</button>
+        <button class="btn green" id="save-invoice" type="submit" form="invoice-form" name="action" value="issue">حفظ دون طباعة</button>
     </div>
 @endsection
 
 @section('content')
+<form id="invoice-form" method="post" enctype="multipart/form-data" action="{{ $invoice ? route('invoices.update',$invoice) : route('invoices.store') }}">
+    @csrf @if($invoice)@method('PUT')@endif
     @include('invoices.partials.template-selector')
 
     <div class="invoice-grid">
@@ -39,10 +41,8 @@
 
     @include('invoices.partials.adjustments')
     @include('invoices.partials.notes')
-
-    <div class="paid panel">
-        <label><input type="checkbox" id="already-paid"> مدفوع بالفعل</label>
-    </div>
+    <input type="hidden" name="notes" id="notes-value">
+</form>
 @endsection
 
 @push('dialogs')
