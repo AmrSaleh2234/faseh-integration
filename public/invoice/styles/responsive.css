@@ -1,0 +1,89 @@
+@media(max-width:1100px) {
+    .sidebar {
+        width: 185px;
+    }
+
+    .invoice-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer {
+        min-height: 220px;
+        order: 0;
+    }
+
+    .details {
+        order: 1;
+    }
+
+}
+
+@media(max-width:700px) {
+    .sidebar {
+        display: none;
+        position: fixed;
+        right: 0;
+        top: 0;
+        z-index: 40;
+        width: 240px;
+        box-shadow: -8px 0 30px #0002;
+    }
+
+    .sidebar.open {
+        display: block;
+    }
+
+    .mobile-toggle {
+        display: inline-block;
+        border: 0;
+        background: none;
+        color: white;
+        font-size: 18px;
+    }
+
+    .account {
+        display: none;
+    }
+
+    .content {
+        padding: 15px 10px;
+    }
+
+    .actions .btn {
+        font-size: 11px;
+        padding: 8px;
+    }
+
+    .detail-row {
+        grid-template-columns: 110px minmax(0,1fr);
+        gap: 7px;
+    }
+
+    .customer-row {
+        grid-template-columns: 80px 1fr;
+    }
+
+    .customer-tools {
+        padding-right: 88px;
+    }
+
+    .tab {
+        font-size: 11px;
+        padding: 0 7px;
+    }
+
+    .tab-body {
+        flex-wrap: wrap;
+    }
+
+    .banks {
+        display: block;
+    }
+
+    .banks div {
+        text-align: right;
+        min-width: 0;
+        margin-top: 10px;
+    }
+
+}

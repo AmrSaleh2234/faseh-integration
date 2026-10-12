@@ -1,0 +1,132 @@
+.items {
+    margin-top: 34px;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.items table {
+    width: 100%;
+    min-width: 1070px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    text-align: center;
+}
+
+.items th {
+    background: #f5f7fc;
+    color: #707a98;
+    padding: 16px 5px;
+    border-bottom: 1px solid #e0e5ed;
+    font-size: 12px;
+}
+
+.items th:nth-child(1) {
+    width: 16%;
+}
+
+.items th:nth-child(2) {
+    width: 16%;
+}
+
+.items th:nth-child(3),.items th:nth-child(4),.items th:nth-child(5) {
+    width: 9%;
+}
+
+.items th:nth-child(6),.items th:nth-child(7) {
+    width: 13%;
+}
+
+.items th:nth-child(8) {
+    width: 9%;
+}
+
+.items th:nth-child(9) {
+    width: 4%;
+}
+
+.items td {
+    border: 1px solid #e1e5ec;
+    height: 59px;
+    padding: 0 4px;
+}
+
+.items td:nth-child(-n+7) {
+    background: #fff9dc;
+}
+
+.items td input,.items td select {
+    width: 100%;
+    height: 52px;
+    border: 0;
+    background: transparent;
+    padding: 5px;
+    color: #545d69;
+}
+
+.items td input::placeholder {
+    color: #a6a89f;
+}
+
+.items td input:focus,.items td select:focus {
+    outline: 2px solid #bee5f8;
+}
+
+.line-total {
+    white-space: nowrap;
+}
+
+.remove-item {
+    border: 0;
+    background: none;
+    color: #d52433;
+    font-size: 21px;
+}
+
+.items-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.add-item {
+    padding: 16px 22px;
+    border: 1px solid #dee4eb;
+    background: #f8fafd;
+    color: #687492;
+    font-weight: bold;
+}
+
+.totals {
+    width: 280px;
+    margin-right: auto;
+}
+
+.totals div {
+    display: flex;
+    justify-content: space-between;
+    padding: 17px 12px;
+    background: #f7f9fc;
+    border: 1px solid #e5e9ef;
+    color: #6d7690;
+}
+
+.totals div+div {
+    background: white;
+}
+
+.tag-line {
+    margin: 24px 5px;
+    width: 130px;
+    border-bottom: 1px solid #9aa8b5;
+    padding: 3px;
+    color: #555;
+}
+
+.tag-line input {
+    width: 95px;
+    border: 0;
+    background: transparent;
+    outline: none;
+}

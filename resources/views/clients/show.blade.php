@@ -1,0 +1,17 @@
+@extends('layouts.admin')
+@section('title', 'عرض العميل - Titanic ways')
+@section('section-name', 'العملاء')
+@section('page-name', 'عرض العميل')
+@push('styles')<link rel="stylesheet" href="{{ asset('clients.css') }}">@endpush
+@push('scripts')<script src="{{ asset('clients.js') }}" defer></script>@endpush
+@section('page-actions')
+<div class="actions client-show-actions"><div class="client-page-title"><strong>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</strong><span>#044</span><span class="status-badge">نشط</span></div><div class="client-balance"><small>الرصيد الافتتاحي</small><strong>57,492.50 SAR</strong></div><div class="client-balance"><small>الرصيد المستحق</small><strong>57,492.50 SAR</strong></div></div>
+@endsection
+@section('content')
+<section class="client-profile panel"><div class="client-profile-main"><span class="client-avatar color-0">م</span><div><h1>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</h1><p>⌖ الخبر</p></div></div><div class="client-profile-links"><span>✉ Ops@myfreight.biz</span><span>☎ +966 56 488 2976</span></div></section>
+<div class="client-toolbar"><a class="btn gray small" href="{{ route('clients.edit') }}">✎ تعديل</a><button type="button" class="btn gray small" data-local-action="إضافة ملاحظة">＋ ملاحظة / مرفق</button><button type="button" class="btn gray small" data-local-action="موعد">موعد</button><button type="button" class="btn gray small" data-local-action="بريد إلكتروني">بريد إلكتروني</button><a class="btn gray small" href="{{ route('invoices.create') }}">＋ فاتورة</a><button type="button" class="btn gray small" data-local-action="عرض سعر">عرض سعر</button><button type="button" class="btn gray small" data-local-action="كشف حساب">كشف حساب</button><button type="button" class="btn gray small" data-local-action="دفعة">دفعة</button></div>
+<section class="client-detail panel"><div class="client-tabs" role="tablist"><button class="active" role="tab" aria-selected="true" data-tab="details">التفاصيل</button><button role="tab" aria-selected="false" data-tab="invoices">الفواتير (3)</button><button role="tab" aria-selected="false" data-tab="payments">المدفوعات (2)</button><button role="tab" aria-selected="false" data-tab="transactions">حركة الحساب (5)</button><button role="tab" aria-selected="false" data-tab="messages">الرسائل المرسلة (3)</button><button role="tab" aria-selected="false" data-tab="timeline">الجدول الزمني</button><button role="tab" aria-selected="false" data-tab="activity">سجل النشاط</button></div>
+<div class="client-tab-panel active" id="tab-details" role="tabpanel"><div class="client-details-grid"><div><h2>بيانات العميل</h2><dl><dt>نوع العميل</dt><dd>تجاري</dd><dt>الاسم التجاري</dt><dd>مؤسسة بلقيس أكرم محمد أكرم عمر دين للتجارة</dd><dt>المدينة</dt><dd>الخبر</dd><dt>الدولة</dt><dd>المملكة العربية السعودية</dd></dl></div><div><h2>بيانات الحساب</h2><dl><dt>كود العميل</dt><dd>#044</dd><dt>الحالة</dt><dd>نشط</dd><dt>العملة</dt><dd>SAR</dd><dt>الرصيد المستحق</dt><dd>57,492.50 SAR</dd></dl></div></div></div>
+@foreach(['invoices'=>'الفواتير','payments'=>'المدفوعات','transactions'=>'حركة الحساب','messages'=>'الرسائل المرسلة','timeline'=>'الجدول الزمني','activity'=>'سجل النشاط'] as $key=>$label)<div class="client-tab-panel" id="tab-{{ $key }}" role="tabpanel" hidden><h2>{{ $label }}</h2><p>لا توجد بيانات متاحة في المعاينة المحلية.</p></div>@endforeach
+</section><p class="client-notice" id="client-notice" role="status" hidden></p>
+@endsection

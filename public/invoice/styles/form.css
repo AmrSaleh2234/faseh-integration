@@ -1,0 +1,166 @@
+.template {
+    padding: 18px 10px;
+    margin-bottom: 25px;
+    min-height: 75px;
+}
+
+.template label {
+    display: block;
+    font-size: 12px;
+    width: 255px;
+    margin-right: auto;
+}
+
+.template select {
+    display: block;
+    width: 255px;
+    height: 27px;
+    margin-right: auto;
+    border: 1px solid #ccd4df;
+    background: #fff;
+}
+
+.field {
+    height: 42px;
+    border: 1px solid #cfd8e2;
+    background: #fff;
+    border-radius: 1px;
+    color: #38414b;
+    padding: 0 11px;
+    min-width: 0;
+}
+
+.field:focus,.editor:focus {
+    outline: 2px solid #b7e0fa;
+    border-color: #48a8e1;
+}
+
+.invoice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    direction: ltr;
+    align-items: start;
+}
+
+.invoice-grid>* {
+    direction: rtl;
+}
+
+.details {
+    background: #f7f9fc;
+}
+
+.detail-row {
+    min-height: 63px;
+    display: grid;
+    grid-template-columns: 200px minmax(0,1fr);
+    align-items: center;
+    gap: 20px;
+    padding: 7px 10px;
+    border-bottom: 1px solid #e4e9ef;
+}
+
+.detail-row>label {
+    color: #425064;
+}
+
+.detail-row>.field {
+    width: 100%;
+}
+
+.days {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.days input {
+    width: 86px;
+}
+
+.sales-person-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.sales-person-control select {
+    flex: 1;
+    min-width: 0;
+}
+
+.sales-person-control a {
+    color: #0789c7;
+    white-space: nowrap;
+}
+
+.custom-row .custom-name {
+    width: 100%;
+}
+
+.custom-value {
+    display: flex;
+    direction: ltr;
+}
+
+.custom-value input {
+    width: 100%;
+}
+
+.remove-custom {
+    width: 35px;
+    height: 42px;
+    flex: none;
+    border: 0;
+    background: #e91d25;
+    color: white;
+    font-size: 18px;
+}
+
+.add-field {
+    display: block;
+    margin: 3px 5px 2px auto;
+    width: 37px;
+    height: 29px;
+    border: 1px solid #d2d9e2;
+    background: white;
+    color: #0789e5;
+    font-size: 20px;
+}
+
+.customer {
+    min-height: 635px;
+    padding: 11px 20px;
+}
+
+.customer-row {
+    display: grid;
+    grid-template-columns: 100px minmax(0,220px);
+    align-items: center;
+    gap: 8px;
+    min-height: 57px;
+}
+
+.customer-row select {
+    width: 100%;
+}
+
+.required {
+    color: #e12835;
+}
+
+.customer-tools {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-right: 108px;
+}
+
+.currency {
+    border: 0;
+    background: none;
+    text-decoration: underline;
+    color: #353d46;
+}
