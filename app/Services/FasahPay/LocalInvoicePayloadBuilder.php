@@ -77,6 +77,7 @@ class LocalInvoicePayloadBuilder
         $items = $detailed
             ? $invoice->items->map(function ($item) {
                 $net = max(0, round((float) $item->unit_price * (float) $item->quantity - (float) $item->discount, 2));
+
                 return ['InvoiceItem' => [
                     'id' => $item->id,
                     'description' => $item->name.' '.($item->description ?? ''),
@@ -97,6 +98,9 @@ class LocalInvoicePayloadBuilder
 
         $issueDate = $invoice->issue_date ?? $invoice->invoice_date;
         $dueDate = $issueDate->copy()->addDays((int) $invoice->payment_terms);
+        $client = $invoice->client;
+        $clientPhone = (string) ($client?->mobile ?: $client?->phone);
+        $clientPhone = preg_replace('/[\s().-]+/u', '', $clientPhone) ?? $clientPhone;
         $source = [
             'Invoice' => [
                 'id' => $invoice->id,
@@ -105,14 +109,17 @@ class LocalInvoicePayloadBuilder
                 'due_date' => $dueDate->format('Y-m-d'),
                 'notes' => 'Local invoice #'.$invoice->number.'; original total SAR '.$invoice->total.'; payable SAR '.number_format($balance, 2, '.', ''),
                 'Client' => [
-                    'business_name' => $invoice->client?->business_name,
-                    'email' => $invoice->client?->email,
-                    'phone1' => $invoice->client?->mobile ?: $invoice->client?->phone,
+                    'business_name' => $client?->business_name,
+                    'email' => $client?->email,
+                    'phone1' => $clientPhone,
                 ],
             ],
             'InvoiceItem' => $items,
         ];
-        $built = $this->builder->build($source, array_merge($invoice->fasah_meta ?? [], ['invoice_type' => $invoice->fasah_type]));
+        $built = $this->builder->build($source, array_merge([
+            'customer_vat' => $client?->tax_number,
+            'company_registration_number' => $client?->registration,
+        ], $invoice->fasah_meta ?? [], ['invoice_type' => $invoice->fasah_type]));
         // Fasah collects only the outstanding amount. For a partly paid or adjusted
         // invoice, preserve the server-calculated VAT share in the balance line.
         if (abs($built['grand_total'] - $balance) > 0.01) {

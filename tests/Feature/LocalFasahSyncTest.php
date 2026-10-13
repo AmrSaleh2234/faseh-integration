@@ -122,6 +122,28 @@ class LocalFasahSyncTest extends TestCase
         $this->assertSame('draft', Invoice::firstOrFail()->status);
     }
 
+    public function test_general_invoice_sends_client_registration_vat_and_compact_mobile(): void
+    {
+        $this->actingAs($this->owner());
+        $client = $this->client();
+        $client->update([
+            'mobile' => '+966 56 488 2976',
+            'registration' => '1010123456',
+            'tax_number' => '123456789012345',
+        ]);
+        $invoice = $this->issue($client, 'general');
+        $this->configureSandbox();
+        Http::fake(fn () => Http::response(['statusCode' => '00000', 'fasahpayInvoiceNumber' => 'F-GENERAL']));
+
+        app(SyncLocalInvoice::class)->execute($invoice->id);
+
+        $payload = $invoice->fasahSync->fresh()->request_payload;
+        $this->assertSame('1010123456', $payload['companyRegistrationNumber']);
+        $this->assertSame('123456789012345', $payload['customerVATNumber']);
+        $this->assertSame('+966564882976', $payload['consumerMobile']);
+        $this->assertSame('synced', $invoice->fasahSync->fresh()->status);
+    }
+
     public function test_success_requires_fasah_number_and_retry_is_authorized(): void
     {
         $owner = $this->owner();
