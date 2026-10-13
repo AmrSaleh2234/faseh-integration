@@ -4,7 +4,7 @@
 @section('page-name', $invoice->number ? 'فاتورة #'.$invoice->number : 'مسودة #'.$invoice->id)
 @push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}"><link rel="stylesheet" href="{{ asset('fasah-status.css') }}">@endpush
 @push('scripts')<script defer src="{{ asset('fasah-status.js') }}"></script>@endpush
-@section('page-actions')<div class="actions invoice-view-actions"><div class="invoice-view-title"><div><h1>{{ $invoice->number ? 'الفاتورة #'.$invoice->number : 'مسودة #'.$invoice->id }}</h1></div><div><strong>{{ $invoice->client?->business_name ?? 'بدون عميل' }}</strong></div><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span></div><button class="btn blue" type="button" onclick="window.print()">▣ طباعة</button></div>@endsection
+@section('page-actions')<div class="actions invoice-view-actions"><div class="invoice-view-title"><div><h1>{{ $invoice->number ? 'الفاتورة #'.$invoice->number : 'مسودة #'.$invoice->id }}</h1></div><div><strong>{{ $invoice->client?->business_name ?? 'بدون عميل' }}</strong></div><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span></div><a class="btn blue" href="{{ route('invoices.document', $invoice) }}" target="_blank" rel="noopener">▣ معاينة وطباعة</a>@if($invoice->status === 'issued')<a class="btn green" href="{{ route('invoices.pdf', $invoice) }}">↓ تنزيل PDF</a>@endif</div>@endsection
 @section('content')
 <div class="invoice-view-toolbar">@can('invoices.edit')<a class="btn gray small" href="{{ route('invoices.edit',$invoice) }}">تعديل</a>
 @endcan

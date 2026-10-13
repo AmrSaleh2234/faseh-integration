@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Services\FasahPay\FasahLookupValues;
 use App\Services\FasahPay\LocalInvoicePayloadBuilder;
 use App\Services\FasahPay\SyncLocalInvoice;
+use App\Services\InvoiceDocument;
 use App\Services\LocalReadService;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,16 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice, LocalReadService $read)
     {
         return view('invoices.show', ['invoice' => $read->invoiceDetails($invoice)]);
+    }
+
+    public function document(Invoice $invoice, InvoiceDocument $document)
+    {
+        return $document->preview($invoice);
+    }
+
+    public function downloadPdf(Invoice $invoice, InvoiceDocument $document)
+    {
+        return $document->download($invoice);
     }
 
     public function edit(Invoice $invoice, LocalReadService $read, LocalInvoicePayloadBuilder $builder)

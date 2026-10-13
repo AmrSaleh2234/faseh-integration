@@ -28,6 +28,8 @@ Route::middleware(['auth', 'active.user', 'password.changed'])->group(function (
     Route::get('/owner/invoices/add', [InvoiceController::class, 'create'])->middleware('can:invoices.create')->name('invoices.create');
     Route::post('/owner/invoices', [InvoiceController::class, 'store'])->middleware('can:invoices.create')->name('invoices.store');
     Route::get('/owner/invoices/view/{invoice}', [InvoiceController::class, 'show'])->middleware('can:view,invoice')->name('invoices.show');
+    Route::get('/owner/invoices/{invoice}/document', [InvoiceController::class, 'document'])->middleware('can:view,invoice')->name('invoices.document');
+    Route::get('/owner/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->middleware('can:view,invoice')->name('invoices.pdf');
     Route::get('/owner/invoices/edit/{invoice}', [InvoiceController::class, 'edit'])->middleware('can:update,invoice')->name('invoices.edit');
     Route::put('/owner/invoices/{invoice}', [InvoiceController::class, 'update'])->middleware('can:update,invoice')->name('invoices.update');
     Route::delete('/owner/invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('can:delete,invoice')->name('invoices.destroy');
