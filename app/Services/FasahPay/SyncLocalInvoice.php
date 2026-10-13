@@ -2,8 +2,9 @@
 
 namespace App\Services\FasahPay;
 
-use App\Models\LocalFasahSync;
+use App\Jobs\SyncLocalInvoiceToFasahJob;
 use App\Models\Invoice;
+use App\Models\LocalFasahSync;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -23,6 +24,7 @@ class SyncLocalInvoice
                 return [$sync, false];
             }
             $sync->update(['status' => 'sending', 'attempts' => $sync->attempts + 1, 'last_error' => null]);
+
             return [$sync, true];
         });
 
@@ -43,10 +45,12 @@ class SyncLocalInvoice
                     'fasah_response' => $response,
                     'last_error' => 'رفض Fasah الفاتورة: '.mb_substr((string) ($response['statusDesc'] ?? $response['statusCode'] ?? 'رد غير معروف'), 0, 400),
                 ]);
+
                 return $sync->fresh();
             }
             if ($number === '') {
                 $sync->update(['status' => 'uncertain', 'fasah_response' => $response, 'last_error' => 'لم يُرجع Fasah رقم فاتورة؛ يلزم التحقق قبل إعادة الإرسال.']);
+
                 return $sync->fresh();
             }
 
@@ -61,11 +65,14 @@ class SyncLocalInvoice
         } catch (ConnectionException $e) {
             $sync->update(['status' => 'uncertain', 'last_error' => 'انقطع الاتصال؛ تحقق من Fasah قبل إعادة الإرسال.']);
         } catch (FasahPayRequestException $e) {
+            $providerMessage = $this->providerMessage($e->responseData);
             $sync->update([
                 'status' => ($e->httpStatus >= 500 || $e->httpStatus === 408) ? 'uncertain' : 'failed',
+                'fasah_status' => (string) ($e->responseData['statusCode'] ?? $e->httpStatus),
+                'fasah_response' => ['http_status' => $e->httpStatus, 'body' => $e->responseData],
                 'last_error' => ($e->httpStatus >= 500 || $e->httpStatus === 408)
                     ? 'نتيجة الطلب غير مؤكدة (HTTP '.$e->httpStatus.'). تحقق من Fasah قبل إعادة الإرسال.'
-                    : 'رفض Fasah الطلب (HTTP '.$e->httpStatus.'). تحقق من بيانات الفاتورة.',
+                    : 'رفض Fasah الطلب (HTTP '.$e->httpStatus.'). '.($providerMessage ?? 'تحقق من بيانات الفاتورة.'),
             ]);
         } catch (Throwable $e) {
             $definitelyLocal = str_contains($e->getMessage(), 'Missing Fasah Pay config');
@@ -88,10 +95,11 @@ class SyncLocalInvoice
                 return false;
             }
             $sync->update(['status' => 'pending', 'last_error' => null]);
+
             return true;
         });
         if ($queued) {
-            \App\Jobs\SyncLocalInvoiceToFasahJob::dispatch($sync->invoice_id)->afterCommit();
+            SyncLocalInvoiceToFasahJob::dispatch($sync->invoice_id)->afterCommit();
         }
     }
 
@@ -103,6 +111,7 @@ class SyncLocalInvoice
     public function status(Invoice $invoice): array
     {
         $sync = LocalFasahSync::where('invoice_id', $invoice->id)->first();
+
         return [
             'status' => $sync?->status ?? 'not_started',
             'fasah_invoice_number' => $sync?->fasah_invoice_number,
@@ -118,7 +127,46 @@ class SyncLocalInvoice
         if (str_contains($e->getMessage(), 'Missing Fasah Pay config')) {
             return 'بيانات دخول Fasah غير مكتملة. راجع إعدادات sandbox.';
         }
+
         // Provider responses can include private details; keep the UI message bounded.
         return mb_substr($e->getMessage(), 0, 500);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $response
+     */
+    private function providerMessage(?array $response): ?string
+    {
+        if ($response === null) {
+            return null;
+        }
+
+        $messages = [];
+        foreach (['statusDesc', 'message', 'error', 'error_description', 'detail', 'title'] as $field) {
+            if (is_scalar($response[$field] ?? null) && trim((string) $response[$field]) !== '') {
+                $messages[] = trim((string) $response[$field]);
+            }
+        }
+
+        if (is_string($response['error']['message'] ?? null)) {
+            $messages[] = trim($response['error']['message']);
+        }
+
+        if (is_array($response['errors'] ?? null)) {
+            foreach ($response['errors'] as $field => $errors) {
+                foreach ((array) $errors as $error) {
+                    if (is_scalar($error) && trim((string) $error) !== '') {
+                        $messages[] = (is_string($field) ? $field.': ' : '').trim((string) $error);
+                    }
+                    if (count($messages) >= 4) {
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        $message = implode('؛ ', array_unique($messages));
+
+        return $message !== '' ? mb_substr($message, 0, 400) : null;
     }
 }

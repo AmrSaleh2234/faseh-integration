@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SyncLocalInvoiceToFasahJob;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\LocalFasahSync;
 use App\Models\Role;
 use App\Models\Staff;
 use App\Models\User;
-use App\Jobs\SyncLocalInvoiceToFasahJob;
 use App\Services\FasahPay\SyncLocalInvoice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -31,6 +31,7 @@ class LocalFasahSyncTest extends TestCase
     {
         $this->seed();
         $staff = Staff::create(['code' => 'OWNER-FASAH', 'first_name' => 'Test', 'last_name' => 'Owner', 'role_id' => Role::where('slug', 'owner')->firstOrFail()->id, 'login_allowed' => true]);
+
         return User::create(['staff_id' => $staff->id, 'name' => 'Test Owner', 'email' => 'fasah-owner@example.test', 'password' => 'test-password-123', 'active' => true]);
     }
 
@@ -182,12 +183,16 @@ class LocalFasahSyncTest extends TestCase
         $uncertain = $this->issue($client, 'general');
         $this->configureSandbox();
         Http::fake(['https://fasah.e2e.invalid/invoices/*' => Http::sequence()
-            ->push(['message' => 'bad input'], 400)
+            ->push(['statusCode' => '40001', 'statusDesc' => 'Invalid invoice', 'errors' => ['port' => ['Unknown port']]], 400)
             ->push(['message' => 'upstream error'], 503)]);
 
         app(SyncLocalInvoice::class)->execute($rejected->id);
         app(SyncLocalInvoice::class)->execute($uncertain->id);
         $this->assertSame('failed', $rejected->fasahSync->fresh()->status);
+        $this->assertSame(400, $rejected->fasahSync->fresh()->fasah_response['http_status']);
+        $this->assertSame('40001', $rejected->fasahSync->fresh()->fasah_status);
+        $this->assertStringContainsString('port: Unknown port', $rejected->fasahSync->fresh()->last_error);
+        $this->get(route('invoices.show', $rejected))->assertSee('port: Unknown port');
         $this->assertSame('uncertain', $uncertain->fasahSync->fresh()->status);
         $this->post(route('invoices.fasah.retry', $uncertain))->assertForbidden();
         app(SyncLocalInvoice::class)->execute($uncertain->id);
