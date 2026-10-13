@@ -206,7 +206,10 @@ class LocalFasahSyncTest extends TestCase
         $this->assertSame('pending', $second->fasahSync->fresh()->status);
         app(SyncLocalInvoice::class)->execute($second->id);
         $this->assertSame('synced', $second->fasahSync->fresh()->status);
-        $this->get(route('invoices.show', $second))->assertSee('تمت المزامنة')->assertSee('F-2');
+        $this->assertSame('F-2', LocalFasahSync::where('invoice_id', $second->id)->firstOrFail()->fasah_invoice_number);
+        $this->get(route('invoices.show', $second))->assertSee('تمت المزامنة')->assertSee('رقم FP')->assertSee('F-2');
+        $this->get(route('invoices.index', ['number' => 'F-2']))->assertOk()->assertSee('رقم FP')->assertSee('F-2')->assertSee('Local Shipping');
+        $this->get(route('invoices.index', ['q' => 'F-2']))->assertOk()->assertSee('F-2');
         $this->assertSame('synced', app(SyncLocalInvoice::class)->execute($second->id)->status);
 
         $staff = Staff::create(['code' => 'LIMITED-FASAH', 'first_name' => 'Limited', 'last_name' => 'User', 'role_id' => Role::where('slug', 'employee')->firstOrFail()->id, 'login_allowed' => true]);

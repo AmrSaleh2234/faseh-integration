@@ -15,9 +15,15 @@ class LocalReadService
     public function invoices(Request $request)
     {
         $query = Invoice::with('client', 'fasahSync')->latest();
-        if ($request->filled('q')) $query->where(fn ($q) => $q->where('number', 'like', '%'.$request->query('q').'%')->orWhereHas('client', fn ($c) => $c->where('business_name', 'like', '%'.$request->query('q').'%')));
-        if ($request->filled('client')) $query->whereHas('client', fn ($q) => $q->where('business_name', 'like', '%'.$request->query('client').'%'));
-        if ($request->filled('number')) $query->where('number', 'like', '%'.$request->query('number').'%');
+        if ($request->filled('q')) {
+            $query->where(fn ($q) => $q->where('number', 'like', '%'.$request->query('q').'%')->orWhereHas('client', fn ($c) => $c->where('business_name', 'like', '%'.$request->query('q').'%'))->orWhereHas('fasahSync', fn ($sync) => $sync->where('fasah_invoice_number', 'like', '%'.$request->query('q').'%')));
+        }
+        if ($request->filled('client')) {
+            $query->whereHas('client', fn ($q) => $q->where('business_name', 'like', '%'.$request->query('client').'%'));
+        }
+        if ($request->filled('number')) {
+            $query->where(fn ($q) => $q->where('number', 'like', '%'.$request->query('number').'%')->orWhereHas('fasahSync', fn ($sync) => $sync->where('fasah_invoice_number', 'like', '%'.$request->query('number').'%')));
+        }
         if ($request->filled('status')) {
             match ($request->query('status')) {
                 'مسودة' => $query->where('status', 'draft'),
@@ -26,8 +32,13 @@ class LocalReadService
                 default => null,
             };
         }
-        if ($request->filled('from')) $query->whereDate('invoice_date', '>=', $request->query('from'));
-        if ($request->filled('to')) $query->whereDate('invoice_date', '<=', $request->query('to'));
+        if ($request->filled('from')) {
+            $query->whereDate('invoice_date', '>=', $request->query('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('invoice_date', '<=', $request->query('to'));
+        }
+
         return $query->paginate(20)->withQueryString();
     }
 
@@ -49,20 +60,41 @@ class LocalReadService
             ->latest()->paginate(20)->withQueryString();
     }
 
-    public function roles() { return Role::withCount('staff')->with('permissions')->get(); }
-    public function roleOptions() { return Role::orderBy('name')->get(); }
-    public function clientOptions() { return Client::orderBy('business_name')->get(); }
-    public function salesOptions() { return Staff::where('status', 'نشط')->orderBy('first_name')->get(); }
+    public function roles()
+    {
+        return Role::withCount('staff')->with('permissions')->get();
+    }
+
+    public function roleOptions()
+    {
+        return Role::orderBy('name')->get();
+    }
+
+    public function clientOptions()
+    {
+        return Client::orderBy('business_name')->get();
+    }
+
+    public function salesOptions()
+    {
+        return Staff::where('status', 'نشط')->orderBy('first_name')->get();
+    }
+
     public function clientDetails(Client $client, User $actor): Client
     {
         $relations = ['contacts', 'attachments'];
-        if ($actor->permits('invoices.view')) $relations[] = 'invoices.payments';
+        if ($actor->permits('invoices.view')) {
+            $relations[] = 'invoices.payments';
+        }
+
         return $client->load($relations);
     }
+
     public function invoiceDetails(Invoice $invoice): Invoice
     {
         return $invoice->load('client', 'salesStaff', 'items', 'customFields', 'payments', 'attachments', 'fasahSync');
     }
+
     public function invoiceForEditing(Invoice $invoice): Invoice
     {
         return $invoice->load('client', 'items', 'customFields', 'attachments', 'fasahSync');
@@ -82,6 +114,7 @@ class LocalReadService
     {
         $canInvoices = $actor->permits('invoices.view');
         $all = Invoice::where('status', 'issued');
+
         return [
             'invoiceCount' => $canInvoices ? Invoice::count() : 0,
             'clientCount' => $actor->permits('clients.view') ? Client::count() : 0,
