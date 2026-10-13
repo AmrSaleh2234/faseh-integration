@@ -7,6 +7,7 @@
 @endcan
 </div>@endsection
 @section('content')<section class="client-profile panel"><div class="client-profile-main"><span class="client-avatar color-0">{{ mb_substr($client->business_name,0,1) }}</span><div><h1>{{ $client->business_name }}</h1><p>⌖ {{ $client->city }}</p></div></div><div class="client-profile-links"><span>{{ $client->email }}</span><span>{{ $client->mobile }}</span></div></section>
+<section class="app-feedback {{ empty($fasahIssues) ? '' : 'error' }}" role="status"><strong>{{ empty($fasahIssues) ? 'جاهز لفاتورة Fasah عامة' : 'بيانات Fasah العامة تحتاج استكمالًا:' }}</strong>@if($fasahIssues)<ul>@foreach($fasahIssues as $issue)<li>{{ $issue }}</li>@endforeach</ul>@can('clients.edit')<a href="{{ route('clients.edit', $client) }}">تعديل بيانات العميل</a>@endcan @endif</section>
 <div class="client-toolbar">@can('clients.edit')<a class="btn gray small" href="{{ route('clients.edit',$client) }}">✎ تعديل</a>
 @endcan
  @can('invoices.create')<a class="btn gray small" href="{{ route('invoices.create',['client_id'=>$client->id]) }}">＋ فاتورة</a>

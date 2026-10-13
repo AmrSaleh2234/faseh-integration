@@ -292,10 +292,12 @@ class InvoicePayloadBuilder
                 'itemPrice' => $price,
                 'quantity' => $qty,
                 'lineItemAmount' => $lineAmount,
-                'lineItemDiscount' => $discountType === 1 ? $discountPct : 0,
+                'lineItemDiscount' => $discountType === 1 ? $discountPct : ($lineAmount > 0 ? round($discountAmount * 100 / $lineAmount, 8) : 0),
                 'lineItemDiscountAmount' => $discountAmount,
                 'lineItemAmountAfterDiscount' => $afterDiscount,
-                'lineItemVAT' => $afterDiscount > 0 ? round($vatAmount * 100 / $afterDiscount, 2) : 0,
+                'lineItemVAT' => array_key_exists('tax_rate', $row)
+                    ? (float) $row['tax_rate']
+                    : ($afterDiscount > 0 ? round($vatAmount * 100 / $afterDiscount, 2) : 0),
                 'lineItemTotalVAT' => $vatAmount,
                 'lineItemTotal' => round($afterDiscount + $vatAmount, 2),
                 'unitOfMeasureArabic' => (string) ($row['unit_ar'] ?? 'وحدة'),

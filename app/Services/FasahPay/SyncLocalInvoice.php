@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\LocalFasahSync;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SyncLocalInvoice
@@ -34,7 +35,7 @@ class SyncLocalInvoice
 
         $requestStarted = false;
         try {
-            $built = $this->builder->build($sync->invoice);
+            $built = $this->builder->validateForSend($sync->invoice);
             $sync->update(['request_payload' => $built['payload']]);
             $requestStarted = true;
             $response = $this->client->createInvoice($built['type'], $built['payload']);
@@ -64,6 +65,11 @@ class SyncLocalInvoice
             ]);
         } catch (ConnectionException $e) {
             $sync->update(['status' => 'uncertain', 'last_error' => 'انقطع الاتصال؛ تحقق من Fasah قبل إعادة الإرسال.']);
+        } catch (ValidationException $e) {
+            $sync->update([
+                'status' => 'failed',
+                'last_error' => 'أصلح بيانات الفاتورة قبل إعادة الإرسال: '.mb_substr(implode('؛ ', array_slice(array_merge(...array_values($e->errors())), 0, 4)), 0, 430),
+            ]);
         } catch (FasahPayRequestException $e) {
             $providerMessage = $this->providerMessage($e->responseData);
             $sync->update([
@@ -72,7 +78,8 @@ class SyncLocalInvoice
                 'fasah_response' => ['http_status' => $e->httpStatus, 'body' => $e->responseData],
                 'last_error' => ($e->httpStatus >= 500 || $e->httpStatus === 408)
                     ? 'نتيجة الطلب غير مؤكدة (HTTP '.$e->httpStatus.'). تحقق من Fasah قبل إعادة الإرسال.'
-                    : 'رفض Fasah الطلب (HTTP '.$e->httpStatus.'). '.($providerMessage ?? 'تحقق من بيانات الفاتورة.'),
+                    : 'رفض Fasah الطلب (HTTP '.$e->httpStatus.'). '.($providerMessage ?? 'تحقق من بيانات الفاتورة.')
+                        .(isset($e->responseData['correlationId']) ? ' رقم التتبع: '.$e->responseData['correlationId'] : ''),
             ]);
         } catch (Throwable $e) {
             $definitelyLocal = str_contains($e->getMessage(), 'Missing Fasah Pay config');
@@ -94,6 +101,7 @@ class SyncLocalInvoice
             if ($sync->status !== 'failed') {
                 return false;
             }
+            $this->builder->validateForSend($sync->invoice);
             $sync->update(['status' => 'pending', 'last_error' => null]);
 
             return true;
@@ -116,6 +124,7 @@ class SyncLocalInvoice
             'status' => $sync?->status ?? 'not_started',
             'fasah_invoice_number' => $sync?->fasah_invoice_number,
             'message' => $sync?->last_error,
+            'correlation_id' => $sync?->fasah_response['body']['correlationId'] ?? $sync?->fasah_response['correlationId'] ?? null,
         ];
     }
 

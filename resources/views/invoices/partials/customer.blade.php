@@ -13,6 +13,7 @@
             <option value="">(اختر عميل)</option>
             @foreach($clients as $client)<option value="{{ $client->id }}" @selected(old('client_id',$invoice?->client_id ?? request('client_id')) == $client->id)>{{ $client->business_name }}</option>@endforeach
         </select>
+        @error('client_id')<small class="field-error">{{ $message }} @can('clients.edit')@if(old('client_id', $invoice?->client_id))<a href="{{ route('clients.edit', old('client_id', $invoice?->client_id)) }}">تعديل العميل</a>@endif @endcan</small>@enderror
     </div>
 
     <div class="customer-tools">

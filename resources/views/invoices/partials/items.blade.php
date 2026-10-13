@@ -1,4 +1,5 @@
 <section class="items panel" aria-label="بنود الفاتورة">
+    @error('items')<p class="field-error">{{ $message }}</p>@enderror
     <div class="table-scroll">
         <table>
             <thead>
@@ -15,7 +16,7 @@
                 </tr>
             </thead>
             <tbody id="item-rows">
-                @foreach(old('items',$invoice?->items?->toArray() ?: [[]]) as $item)
+                @foreach(old('items',$invoice?->items?->toArray() ?: [[]]) as $index => $item)
                     @include('invoices.partials.item-row', ['item' => $item])
                 @endforeach
             </tbody>

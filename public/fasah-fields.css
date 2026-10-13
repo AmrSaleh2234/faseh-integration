@@ -6,5 +6,7 @@
 .fasah-field .field { width: 100%; min-width: 0; }
 .fasah-grid [hidden] { display: none !important; }
 .fasah-general-hint { grid-column: span 2; align-self: end; color: #657084; }
+.fasah-warning { color: #946410; background: #fff8e4; padding: 7px; border: 1px solid #ead7a1; }
+.fasah-warning[hidden], .fasah-field .field[hidden] { display: none !important; }
 @media (max-width: 850px) { .fasah-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .fasah-grid { grid-template-columns: 1fr; } .fasah-general-hint { grid-column: auto; } }

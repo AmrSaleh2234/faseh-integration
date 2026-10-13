@@ -2,14 +2,17 @@
 
 ## Local application setup
 
-The dashboard, invoices, clients, staff, roles, and activity log use a local MySQL database. They do not send changes to Daftra or Fasah Pay. The bridge API described below remains separate.
+The dashboard, invoices, clients, staff, roles, and activity log use a local MySQL database. New issued local invoices are queued for direct delivery to Fasah Pay; they do not go through Daftra. The older Daftra bridge API described below remains separate.
 
 1. Create an empty MySQL database named `faseh_local` on localhost (or change `DB_DATABASE` in `.env`). Configure `DB_HOST`, `DB_PORT`, `DB_USERNAME`, and `DB_PASSWORD` for your local MySQL installation.
 2. Run `php artisan migrate --force` and `php artisan db:seed --force`. The seeder creates only the built-in roles and permissions; it does not import preview clients or invoices.
 3. Run `php artisan app:create-owner` in a terminal and answer the name, email, and password prompts. No default password is installed.
-4. Run `php artisan serve --port=8018` and sign in at `/login`.
+4. Set `QUEUE_CONNECTION=database` and `FASAHPAY_ENV=sandbox` in `.env`, then run `php artisan queue:work --queue=fasah-local --tries=1` in a separate terminal. Keep this worker running and restart it after changing Fasah settings.
+5. Run `php artisan serve --port=8018` and sign in at `/login`.
 
-The Owner can create staff accounts and set their initial passwords. Staff members must change that password at first sign-in. Invoices are SAR-only in this version; issuing one never calls Daftra or Fasah. Payments are recorded manually on the invoice page. Uploaded files are stored privately and require authorization to download.
+The Owner can create staff accounts and set their initial passwords. Staff members must change that password at first sign-in. Invoices are SAR-only. A draft stays local. Issuing a local invoice creates a pending Fasah sync record and dispatches a queue job after the database transaction commits. The page displays **synced** only after Fasah accepts the request and returns its invoice number. Definite rejections can be corrected and retried from the invoice page; timeouts, server failures, and accepted responses without a number require manual investigation before any resend. The local invoice remains issued if delivery fails. Payments may be recorded manually on the invoice page. Uploaded files are stored privately and require authorization to download.
+
+Configure the sandbox credentials and `FASAHPAY_BILLER_VAT_NUMBER` below before expecting successful delivery. Set a strong `FASAHPAY_CALLBACK_SECRET` and arrange for Fasah to send it in the `X-Callback-Secret` header so payment and settlement callbacks can update local invoices. A Fasah paid notification records the remaining balance once; repeated notifications do not create another payment. With missing sandbox credentials, the sync fails visibly and no invoice is marked synced. Do not switch to production until a sandbox invoice has been accepted and its callbacks verified.
 
 Run `php artisan test` for the feature suite. The default suite uses an in-memory SQLite database; it can also run against a separate MySQL test database using `DB_CONNECTION=mysql DB_DATABASE=your_test_database php artisan test` after that test database has been created. Never point tests at the application database because the test runner refreshes its schema.
 
@@ -27,19 +30,17 @@ Daftra invoice  →  POST /api/fasah/sync/{id}  →  Fasah Pay
 Fasah Pay paid  →  callback  →  Daftra payment recorded
 ```
 
-Project path: `daftra-fasah-bridge/`
-
 ---
 
 ## Quick start
 
 ```bash
-cd daftra-fasah-bridge
+cd faseh
 cp .env.example .env   # if needed
 php artisan key:generate
 php artisan migrate
 php artisan serve
-php artisan queue:work   # if you use ?queue=1
+php artisan queue:work --queue=fasah-local --tries=1   # handles local invoice sync only
 ```
 
 ---
@@ -141,10 +142,13 @@ Or pass the same fields in the sync API body / artisan options.
 
 ### Sync example
 
+Set a long random `BRIDGE_SYNC_API_TOKEN` in `.env`. The sync and synced-invoice API endpoints require it in the `X-Bridge-Token` header. Without a configured token, these endpoints return 401. Artisan commands do not require this header.
+
 ```bash
 curl -X POST http://localhost:8000/api/fasah/sync/12345 \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
+  -H "X-Bridge-Token: YOUR_BRIDGE_SYNC_API_TOKEN" \
   -d '{
     "invoice_type": "billoflading",
     "bill_of_lading": "202107071",

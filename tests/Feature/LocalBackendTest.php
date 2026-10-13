@@ -2,26 +2,42 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SyncLocalInvoiceToFasahJob;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Role;
 use App\Models\Staff;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class LocalBackendTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Carbon::setTestNow('2026-10-12 12:00:00 Asia/Riyadh');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     private function owner(): User
     {
         $this->seed();
         $staff = Staff::create(['code' => 'OWNER', 'first_name' => 'Test', 'last_name' => 'Owner', 'email' => 'owner@example.test', 'role_id' => Role::where('slug', 'owner')->firstOrFail()->id, 'login_allowed' => true]);
+
         return User::create(['staff_id' => $staff->id, 'name' => 'Test Owner', 'email' => 'owner@example.test', 'password' => 'test-password-123', 'active' => true]);
     }
 
@@ -80,29 +96,60 @@ class LocalBackendTest extends TestCase
         $this->put(route('invoices.update', $draft), [
             'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
             'fasah_type' => 'importer', 'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
-            'discount_value' => 10, 'discount_kind' => 'amount', 'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 2, 'discount' => 10, 'tax_one' => 15, 'tax_two' => 0]],
+            'discount_value' => 0, 'discount_kind' => 'amount', 'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 2, 'discount' => 10, 'tax_one' => 15, 'tax_two' => 0]],
         ])->assertRedirect();
         $invoice = $draft->fresh();
         $this->assertSame(1, $invoice->number);
-        $this->assertEquals(208.50, $invoice->total);
+        $this->assertEquals(218.50, $invoice->total);
         $this->post(route('invoices.store'), [
             'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
             'fasah_type' => 'importer', 'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
             'items' => [['name' => 'Second', 'unit_price' => 1, 'quantity' => 1]],
         ])->assertRedirect();
         $this->assertSame(2, Invoice::where('id', '!=', $invoice->id)->firstOrFail()->number);
-        $this->get(route('invoices.show', $invoice))->assertOk()->assertSee('208.50');
+        $this->get(route('invoices.show', $invoice))->assertOk()->assertSee('218.50');
         $this->get(route('invoices.edit', $invoice))->assertOk();
         $this->post(route('invoices.payments.store', $invoice), ['amount' => 100, 'paid_on' => '2026-10-12', 'method' => 'نقدًا'])->assertRedirect();
-        $this->assertEquals(108.50, $invoice->fresh()->balance);
+        $this->assertEquals(118.50, $invoice->fresh()->balance);
         $this->post(route('invoices.payments.store', $invoice), ['amount' => 200, 'paid_on' => '2026-10-12', 'method' => 'نقدًا'])->assertSessionHasErrors('amount');
-        $this->post(route('invoices.payments.store', $invoice), ['amount' => 108.50, 'paid_on' => '2026-10-12', 'method' => 'نقدًا'])->assertRedirect();
+        $this->post(route('invoices.payments.store', $invoice), ['amount' => 118.50, 'paid_on' => '2026-10-12', 'method' => 'نقدًا'])->assertRedirect();
         $this->assertSame('مدفوعة', $invoice->fresh()->display_status);
         $this->put(route('invoices.update', $invoice), ['action' => 'metadata', 'items' => [['name' => 'Changed', 'unit_price' => 1]], 'notes' => 'Updated'])->assertRedirect();
-        $this->assertEquals(208.50, $invoice->fresh()->total);
+        $this->assertEquals(218.50, $invoice->fresh()->total);
         $this->assertSame('Freight', $invoice->fresh()->items->first()->name);
         $this->delete(route('invoices.destroy', $invoice))->assertSessionHasErrors('invoice');
         Http::assertNothingSent();
+    }
+
+    public function test_manual_invoice_number_is_kept_in_draft_unique_on_issue_and_advances_automatic_sequence(): void
+    {
+        Queue::fake();
+        $this->actingAs($this->owner());
+        $client = Client::create(['code' => 'NUMBER-CLIENT', 'type' => 'business', 'business_name' => 'Numbered client']);
+        $data = [
+            'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12',
+            'issue_date' => '2026-10-12', 'fasah_type' => 'importer',
+            'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
+            'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 1]],
+        ];
+
+        $this->post(route('invoices.store'), ['action' => 'draft', 'invoice_number' => 700])->assertRedirect();
+        $draft = Invoice::firstOrFail();
+        $this->assertNull($draft->number);
+        $this->assertEquals(700, $draft->requested_number);
+        $this->get(route('invoices.edit', $draft))->assertOk()->assertSee('value="700"', false);
+
+        $this->put(route('invoices.update', $draft), $data)->assertRedirect();
+        $this->assertSame(700, $draft->fresh()->number);
+        $this->assertSame('LOCAL-700', $draft->fresh()->fasahSync->internal_invoice_number);
+
+        $this->post(route('invoices.store'), $data)->assertRedirect();
+        $this->assertSame(701, Invoice::where('id', '!=', $draft->id)->firstOrFail()->number);
+
+        $this->post(route('invoices.store'), $data + ['invoice_number' => 700])->assertSessionHasErrors('invoice_number');
+        $this->post(route('invoices.store'), $data + ['invoice_number' => '12.5'])->assertSessionHasErrors('invoice_number');
+        $this->assertSame(2, Invoice::count());
+        Queue::assertPushed(SyncLocalInvoiceToFasahJob::class, 2);
     }
 
     public function test_last_owner_cannot_be_deactivated_and_owner_command_is_interactive(): void

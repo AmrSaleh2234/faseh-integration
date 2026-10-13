@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Staff;
 use App\Models\User;
 use App\Services\FasahPay\SyncLocalInvoice;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
@@ -24,7 +25,14 @@ class LocalFasahSyncTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Carbon::setTestNow('2026-10-12 12:00:00 Asia/Riyadh');
         Queue::fake();
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function owner(): User
@@ -280,5 +288,141 @@ class LocalFasahSyncTest extends TestCase
         ])->assertStatus(503);
         $this->assertEquals(0, $invoice->fresh()->amount_paid);
         $this->assertSame(0, $invoice->payments()->count());
+    }
+
+    public function test_client_can_be_saved_without_fasah_details_and_form_errors_are_arabic(): void
+    {
+        $this->actingAs($this->owner());
+        $this->post(route('clients.store'), [
+            'code' => 'INCOMPLETE', 'type' => 'business', 'business_name' => 'عميل تجريبي',
+        ])->assertRedirect();
+        $client = Client::where('code', 'INCOMPLETE')->firstOrFail();
+        $this->get(route('clients.show', $client))->assertOk()->assertSee('بيانات Fasah العامة تحتاج استكمالًا');
+        $this->put(route('clients.update', $client), [
+            'code' => 'INCOMPLETE', 'type' => 'business', 'business_name' => 'عميل تجريبي',
+            'email' => 'bad-email', 'mobile' => '123', 'tax_number' => '123',
+        ])->assertRedirect();
+        $this->assertSame('bad-email', $client->fresh()->email);
+        $this->get(route('clients.show', $client))->assertOk()->assertSee('بريدًا إلكترونيًا صحيحًا')->assertSee('15 رقمًا');
+        $this->post(route('clients.store'), [
+            'code' => 'INCOMPLETE', 'type' => 'business', 'business_name' => 'عميل آخر',
+            'contacts' => [['email' => 'bad-email']],
+        ])->assertSessionHasErrors(['code', 'contacts.0.email']);
+        $this->assertStringContainsString('مستخدم بالفعل', session('errors')->first('code'));
+        $this->assertStringContainsString('بريدًا إلكترونيًا صحيحًا', session('errors')->first('contacts.0.email'));
+
+        $this->post(route('invoices.store'), [
+            'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
+            'fasah_type' => 'general', 'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 1]],
+        ])->assertSessionHasErrors('client_id');
+        Queue::assertNotPushed(SyncLocalInvoiceToFasahJob::class);
+        $this->assertSame(0, LocalFasahSync::count());
+    }
+
+    public function test_issue_rejects_invalid_codes_dates_vat_and_unrepresentable_discount(): void
+    {
+        $this->actingAs($this->owner());
+        $client = $this->client();
+        $base = [
+            'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12',
+            'issue_date' => '2026-10-13', 'fasah_type' => 'billoflading',
+            'fasah_meta' => ['bill_of_lading' => 'BL-1', 'shipment_type' => '1foo', 'port' => 'port', 'doc_ref_no' => 'DOC-1'],
+            'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 1, 'tax_one' => 15, 'tax_two' => 15]],
+        ];
+        $this->post(route('invoices.store'), $base)->assertSessionHasErrors([
+            'issue_date', 'fasah_meta.shipment_type', 'fasah_meta.port', 'items.0.tax_two',
+        ]);
+        $this->post(route('invoices.store'), array_replace_recursive($base, [
+            'issue_date' => '2026-10-11', 'payment_terms' => 0,
+            'fasah_meta' => ['shipment_type' => '1', 'port' => '30'],
+            'items' => [['tax_two' => 0]],
+        ]))->assertSessionHasErrors('payment_terms');
+        $this->post(route('invoices.store'), [
+            'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
+            'fasah_type' => 'importer', 'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
+            'discount_value' => 10,
+            'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 1, 'tax_one' => 15]],
+        ])->assertSessionHasErrors('discount_value');
+        Queue::assertNotPushed(SyncLocalInvoiceToFasahJob::class);
+        $this->assertSame(0, LocalFasahSync::count());
+    }
+
+    public function test_alternate_bill_of_lading_reference_and_disputed_codes_remain_usable_with_warnings(): void
+    {
+        $this->actingAs($this->owner());
+        $client = $this->client();
+        $bill = $this->issue($client, 'billoflading', [
+            'bill_of_lading' => 'BL-2', 'shipment_type' => '1', 'port' => '999',
+            'carrier_manifest' => 'MAN-1', 'carrier_manifest_date' => '2026-10-12',
+        ]);
+        $declaration = $this->issue($client, 'declaration', [
+            'declaration_number' => 'DEC-2', 'declaration_date' => '2026-10-12',
+            'declaration_type' => '6', 'port' => '30',
+        ]);
+        $this->assertSame('issued', $bill->status);
+        $this->assertSame('issued', $declaration->status);
+        $bill->fasahSync->update(['status' => 'failed']);
+        $declaration->fasahSync->update(['status' => 'failed']);
+        $this->get(route('invoices.edit', $bill))->assertOk()->assertSee('رمز الميناء غير موجود في القائمة');
+        $this->get(route('invoices.edit', $declaration))->assertOk()->assertSee('غير مذكور في تعريف API');
+        Queue::assertPushed(SyncLocalInvoiceToFasahJob::class, 2);
+    }
+
+    public function test_fixed_item_discount_and_partial_payment_have_consistent_fasah_math(): void
+    {
+        $this->actingAs($this->owner());
+        $client = $this->client();
+        $detailed = $this->issue($client, 'importer', ['importer_number' => 'IMP-1', 'port' => '30'], [
+            'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 2, 'discount' => 10, 'tax_one' => 15]],
+        ]);
+        $partial = $this->issue($client, 'general', [], ['deposit_amount' => 20, 'deposit_paid' => 1]);
+        $this->configureSandbox();
+        Http::fake(fn ($request) => Http::response(['statusCode' => '00000', 'fasahpayInvoiceNumber' => 'F-'.$request->data()['internalInvoiceNumber']]));
+        app(SyncLocalInvoice::class)->execute($detailed->id);
+        app(SyncLocalInvoice::class)->execute($partial->id);
+        $line = $detailed->fasahSync->fresh()->request_payload['item'][0];
+        $this->assertEquals(5, $line['lineItemDiscount']);
+        $this->assertEquals(15, $line['lineItemVAT']);
+        $this->assertEquals(10, $line['lineItemDiscountAmount']);
+        $this->assertSame('synced', $detailed->fasahSync->fresh()->status);
+        $this->assertSame('synced', $partial->fasahSync->fresh()->status);
+        $this->assertEquals(95, $partial->fasahSync->fresh()->request_payload['grandTotal']);
+        $this->assertEquals(12.39, $partial->fasahSync->fresh()->request_payload['totalVAT']);
+    }
+
+    public function test_expired_due_date_blocks_worker_and_retry_until_corrected(): void
+    {
+        $this->actingAs($this->owner());
+        $invoice = $this->issue($this->client(), 'general', [], ['payment_terms' => 1]);
+        $this->configureSandbox();
+        Http::fake(fn () => Http::response(['statusCode' => '00000', 'fasahpayInvoiceNumber' => 'F-NEW']));
+        Carbon::setTestNow('2026-10-15 12:00:00 Asia/Riyadh');
+
+        app(SyncLocalInvoice::class)->execute($invoice->id);
+        $this->assertSame('failed', $invoice->fasahSync->fresh()->status);
+        $this->assertStringContainsString('تاريخ الاستحقاق', $invoice->fasahSync->fresh()->last_error);
+        Http::assertNothingSent();
+        $this->post(route('invoices.fasah.retry', $invoice))->assertSessionHasErrors('payment_terms');
+        $this->put(route('invoices.update', $invoice), ['action' => 'metadata', 'payment_terms' => 5])->assertRedirect();
+        $this->post(route('invoices.fasah.retry', $invoice))->assertRedirect();
+        Cache::put('fasahpay.jwt.sandbox', 'fake-token', 3000);
+        app(SyncLocalInvoice::class)->execute($invoice->id);
+        $this->assertSame('synced', $invoice->fasahSync->fresh()->status, $invoice->fasahSync->fresh()->last_error ?? '');
+        Http::assertSentCount(1);
+    }
+
+    public function test_ambiguous_provider_rejection_keeps_correlation_id_visible(): void
+    {
+        $this->actingAs($this->owner());
+        $invoice = $this->issue($this->client(), 'general');
+        $this->configureSandbox();
+        Http::fake(fn () => Http::response([
+            'statusCode' => '40001', 'statusDesc' => 'validation_failed', 'correlationId' => 'FASAH-TRACE-1',
+        ], 400));
+
+        app(SyncLocalInvoice::class)->execute($invoice->id);
+        $this->assertSame('failed', $invoice->fasahSync->fresh()->status);
+        $this->get(route('invoices.show', $invoice))->assertOk()->assertSee('FASAH-TRACE-1');
+        $this->get(route('invoices.fasah.status', $invoice))->assertJsonPath('correlation_id', 'FASAH-TRACE-1');
     }
 }

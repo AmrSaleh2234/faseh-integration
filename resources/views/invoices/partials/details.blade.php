@@ -1,12 +1,15 @@
 <section class="details panel" aria-label="بيانات الفاتورة">
     <div class="detail-row">
         <label for="invoice-number">رقم الفاتورة</label>
-        <input class="field" id="invoice-number" value="{{ $invoice?->number ?? 'عند الإصدار' }}" readonly>
+        <input class="field" id="invoice-number" name="invoice_number" type="number" min="1" max="999999999999999" step="1" inputmode="numeric" placeholder="تلقائي عند الإصدار" value="{{ old('invoice_number', $invoice?->requested_number) }}">
+        <small>اختياري؛ اتركه فارغًا لاستخدام الرقم التالي تلقائيًا.</small>
+        @error('invoice_number')<small class="field-error">{{ $message }}</small>@enderror
     </div>
 
     <div class="detail-row">
         <label for="invoice-date">تاريخ الفاتورة</label>
         <input class="field" id="invoice-date" name="invoice_date" type="date" value="{{ old('invoice_date',$invoice?->invoice_date?->format('Y-m-d') ?? now()->toDateString()) }}">
+        @error('invoice_date')<small class="field-error">{{ $message }}</small>@enderror
     </div>
 
     <div class="detail-row">
@@ -17,6 +20,7 @@
     <div class="detail-row">
         <label for="issue-date">تاريخ الإصدار</label>
         <input class="field" id="issue-date" name="issue_date" type="date" value="{{ old('issue_date',$invoice?->issue_date?->format('Y-m-d') ?? now()->toDateString()) }}">
+        @error('issue_date')<small class="field-error">{{ $message }}</small>@enderror
     </div>
 
     <div class="detail-row">
@@ -25,6 +29,7 @@
             <input class="field" id="payment-terms" name="payment_terms" type="number" min="0" value="{{ old('payment_terms',$invoice?->payment_terms ?? 0) }}">
             <span>يوم</span>
         </div>
+        @error('payment_terms')<small class="field-error">{{ $message }}</small>@enderror
     </div>
 
     <div id="custom-fields">
