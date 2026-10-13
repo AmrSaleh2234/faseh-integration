@@ -8,6 +8,7 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Contracts\View\View;
 use Mpdf\Mpdf;
+use NumberFormatter;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceDocument
@@ -31,14 +32,19 @@ class InvoiceDocument
             ? round((float) $invoice->subtotal * (float) $invoice->discount_value / 100, 2)
             : (float) $invoice->discount_value;
         $dueDate = ($invoice->issue_date ?? $invoice->invoice_date)?->copy()->addDays((int) $invoice->payment_terms);
+        $taxRates = $invoice->items->map(fn ($item): float => (float) $item->tax_one + (float) $item->tax_two)->unique()->values();
+        $taxLabel = $taxRates->count() === 1
+            ? 'ضريبة ('.rtrim(rtrim(number_format($taxRates->first(), 2, '.', ''), '0'), '.').'%)'
+            : 'ضريبة';
 
         return [
             'invoice' => $invoice,
             'company' => config('invoice_document.company'),
-            'logo' => 'data:image/svg+xml;base64,'.base64_encode((string) file_get_contents(public_path('invoice-logo.svg'))),
+            'logo' => 'data:image/png;base64,'.base64_encode((string) file_get_contents(public_path('invoice-template-logo.png'))),
+            'currencySymbol' => 'data:image/png;base64,'.base64_encode((string) file_get_contents(public_path('saudi-riyal-symbol.png'))),
+            'fasahNumber' => $invoice->fasahSync?->fasah_invoice_number,
             'banks' => array_filter(config('invoice_document.banks', []), fn (array $bank): bool => filled($bank['iban'] ?? null)),
             'details' => array_filter([
-                'FP Number' => $invoice->fasahSync?->fasah_invoice_number,
                 'DEBIT INVOICE#' => $customFields->get('DEBIT INVOICE#'),
                 'JOB#' => $customFields->get('JOB#'),
                 'JOB DATE' => $customFields->get('JOB DATE'),
@@ -53,6 +59,8 @@ class InvoiceDocument
             'itemTotal' => $itemTotal,
             'discount' => $discount,
             'dueDate' => $dueDate,
+            'taxLabel' => $taxLabel,
+            'balanceWords' => $this->balanceInWords($invoice->balance),
             'qrCode' => $this->qrCode($invoice),
         ];
     }
@@ -71,7 +79,7 @@ class InvoiceDocument
             'format' => 'A4',
             'margin_left' => 14,
             'margin_right' => 14,
-            'margin_top' => 13,
+            'margin_top' => 11.3,
             'margin_bottom' => 14,
             'default_font' => 'dejavusans',
             'tempDir' => storage_path('framework/cache'),
@@ -118,5 +126,27 @@ class InvoiceDocument
         ));
 
         return $result->getDataUri();
+    }
+
+    private function balanceInWords(float $balance): string
+    {
+        if (! extension_loaded('intl')) {
+            return number_format($balance, 2).' ريال سعودي';
+        }
+
+        $formatter = new NumberFormatter('ar_SA', NumberFormatter::SPELLOUT);
+        $riyals = (int) floor($balance);
+        $halalas = (int) round(($balance - $riyals) * 100);
+        if ($halalas === 100) {
+            $riyals++;
+            $halalas = 0;
+        }
+
+        $words = 'فقط '.$formatter->format($riyals).' ريال سعودي';
+        if ($halalas > 0) {
+            $words .= ' و'.$formatter->format($halalas).' هللة';
+        }
+
+        return $words;
     }
 }

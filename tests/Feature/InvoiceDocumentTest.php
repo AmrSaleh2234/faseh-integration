@@ -43,11 +43,25 @@ class InvoiceDocumentTest extends TestCase
             'notes' => 'شروط الدفع خلال سبعة أيام',
         ]);
         $invoice->items()->create(['position' => 0, 'name' => 'Ocean Freight', 'description' => 'شحن بحري', 'unit_price' => '100.00', 'quantity' => 1, 'discount' => '0.00', 'tax_one' => 15, 'tax_two' => 0, 'line_total' => '115.00']);
-        $invoice->customFields()->create(['position' => 0, 'name' => 'BL#', 'value' => 'BL-2026-146']);
+        $position = 0;
+        foreach ([
+            'DEBIT INVOICE#' => 'JED/10/2026/0049',
+            'JOB#' => 'TWC-0049/10/26',
+            'JOB DATE' => 'TWC-0049/10/26',
+            'BL#' => 'BL-2026-146',
+            'VESSEL' => 'MEDIKON SIA',
+            'VOY' => '26001E',
+            'ARRIVAL DATE' => '13/10/2026',
+            'FROM' => 'KARACHI',
+            'TO' => 'JEDDAH',
+        ] as $name => $value) {
+            $invoice->customFields()->create(['position' => $position++, 'name' => $name, 'value' => $value]);
+        }
         $invoice->fasahSync()->create(['internal_invoice_number' => 'LOCAL-146', 'fasah_invoice_number' => 'FP-123', 'status' => 'synced']);
         config([
             'invoice_document.company.vat_number' => '312836247600003',
             'invoice_document.banks.sar.iban' => 'SA3110000085200001551710',
+            'invoice_document.banks.usd.iban' => 'SA7110000085200001599102',
         ]);
 
         $this->get(route('invoices.pdf', $invoice))->assertRedirect(route('login'));
@@ -58,10 +72,12 @@ class InvoiceDocumentTest extends TestCase
             ->assertSee('شركة العميل للتجارة')
             ->assertSee('BL-2026-146')
             ->assertSee('FP-123')
-            ->assertSee('SAR 100.00')
+            ->assertSee('ضريبة (15%)')
+            ->assertSee('100.00')
             ->assertSee('18/10/2026')
             ->assertSee('data:image/png;base64,', false)
-            ->assertSee('SA3110000085200001551710');
+            ->assertSee('SA3110000085200001551710')
+            ->assertSee('SA7110000085200001599102');
 
         $response = $this->get(route('invoices.pdf', $invoice))->assertOk();
         $this->assertStringStartsWith('%PDF-', $response->getContent());
