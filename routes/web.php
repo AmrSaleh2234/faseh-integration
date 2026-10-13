@@ -32,6 +32,8 @@ Route::middleware(['auth', 'active.user', 'password.changed'])->group(function (
     Route::put('/owner/invoices/{invoice}', [InvoiceController::class, 'update'])->middleware('can:update,invoice')->name('invoices.update');
     Route::delete('/owner/invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('can:delete,invoice')->name('invoices.destroy');
     Route::post('/owner/invoices/{invoice}/payments', [InvoiceController::class, 'payment'])->middleware('can:pay,invoice')->name('invoices.payments.store');
+    Route::get('/owner/invoices/{invoice}/fasah-status', [InvoiceController::class, 'fasahStatus'])->middleware('can:view,invoice')->name('invoices.fasah.status');
+    Route::post('/owner/invoices/{invoice}/fasah-retry', [InvoiceController::class, 'retryFasah'])->middleware('can:sync,invoice')->name('invoices.fasah.retry');
 
     Route::get('/v2/owner/entity/client/list', [ClientController::class, 'index'])->middleware('can:clients.view')->name('clients.index');
     Route::get('/owner/clients/add', [ClientController::class, 'create'])->middleware('can:clients.create')->name('clients.create');

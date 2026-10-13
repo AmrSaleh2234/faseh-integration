@@ -5,12 +5,14 @@ namespace App\Actions;
 use App\Models\Invoice;
 use App\Models\Client;
 use App\Models\User;
+use App\Jobs\SyncLocalInvoiceToFasahJob;
+use App\Services\FasahPay\LocalInvoicePayloadBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaveInvoice
 {
-    public function __construct(private RecordActivity $activity) {}
+    public function __construct(private RecordActivity $activity, private LocalInvoicePayloadBuilder $fasahBuilder) {}
 
     private function cents(mixed $value): int { return (int) round(((float) ($value ?: 0)) * 100); }
     private function amount(int $cents): string { return number_format($cents / 100, 2, '.', ''); }
@@ -54,7 +56,17 @@ class SaveInvoice
             if (($data['deposit_kind'] ?? 'amount') === 'percent' && $deposit > 10000) throw ValidationException::withMessages(['deposit_amount' => 'نسبة الدفعة لا تتجاوز 100%.']);
             if (($data['deposit_kind'] ?? 'amount') === 'percent') $deposit = (int) round($total * $deposit / 10000);
             if ($issue && $deposit > $total) throw ValidationException::withMessages(['deposit_amount' => 'الدفعة المقدمة أكبر من إجمالي الفاتورة.']);
+            if ($issue) {
+                $this->fasahBuilder->validateForIssue(
+                    $data,
+                    Client::findOrFail($data['client_id']),
+                    $total / 100,
+                    ! empty($data['deposit_paid']) ? $deposit / 100 : 0,
+                );
+            }
             $invoice->fill(collect($data)->only(['client_id', 'sales_staff_id', 'invoice_date', 'issue_date', 'payment_terms', 'delivery_method', 'discount_kind', 'deposit_kind', 'notes'])->all());
+            $invoice->fasah_type = $data['fasah_type'] ?? null;
+            $invoice->fasah_meta = $data['fasah_meta'] ?? [];
             $invoice->fill(['currency' => 'SAR', 'discount_value' => $this->amount($discountValue), 'adjustment' => $this->amount($this->cents($data['adjustment'] ?? 0)), 'deposit_amount' => $this->amount($this->cents($data['deposit_amount'] ?? 0)), 'deposit_paid' => (bool) ($data['deposit_paid'] ?? false), 'insurance_visible' => (bool) ($data['insurance_visible'] ?? false), 'insurance_expenses' => $this->amount($this->cents($data['insurance_expenses'] ?? 0)), 'subtotal' => $this->amount($subtotal), 'tax_total' => $this->amount($taxTotal), 'total' => $this->amount($total)]);
             if ($issue) {
                 $sequence = DB::table('invoice_sequences')->where('id', 1)->lockForUpdate()->first();
@@ -75,6 +87,13 @@ class SaveInvoice
                 $invoice->amount_paid = $this->amount($deposit);
                 $invoice->save();
             }
+            if ($issue) {
+                $invoice->fasahSync()->create([
+                    'internal_invoice_number' => 'LOCAL-'.$invoice->number,
+                    'status' => 'pending',
+                ]);
+                DB::afterCommit(fn () => SyncLocalInvoiceToFasahJob::dispatch($invoice->id));
+            }
             $this->activity->record($actor, $issue ? 'invoice.issued' : 'invoice.drafted', 'invoice', $invoice->id, 'فاتورة #'.($invoice->number ?? $invoice->id));
             return $invoice->load('items', 'customFields');
         });
@@ -85,6 +104,14 @@ class SaveInvoice
         if ($invoice->status === 'draft') throw ValidationException::withMessages(['invoice' => 'يمكن تعديل المسودة من نموذج الإنشاء.']);
         return DB::transaction(function () use ($invoice, $data, $actor) {
             $invoice->fill(collect($data)->only(['sales_staff_id', 'payment_terms', 'insurance_company', 'notes'])->all());
+            if (array_key_exists('fasah_type', $data)) {
+                if ($invoice->fasahSync?->status !== 'failed') {
+                    throw ValidationException::withMessages(['fasah_type' => 'يمكن تعديل بيانات Fasah فقط بعد فشل المزامنة.']);
+                }
+                $this->fasahBuilder->validateForIssue($data, $invoice->client, (float) $invoice->total, (float) $invoice->amount_paid);
+                $invoice->fasah_type = $data['fasah_type'];
+                $invoice->fasah_meta = $data['fasah_meta'] ?? [];
+            }
             $invoice->save();
             if (array_key_exists('custom_fields', $data)) {
                 $invoice->customFields()->delete();

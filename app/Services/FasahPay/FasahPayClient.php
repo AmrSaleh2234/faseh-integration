@@ -39,7 +39,8 @@ class FasahPayClient
         $response = $this->send(fn () => $this->http()->post($path, $payload));
 
         if ($response->failed()) {
-            throw new RuntimeException(
+            throw new FasahPayRequestException(
+                $response->status(),
                 "Fasah Pay createInvoice({$type}) failed: ".$response->status().' '.$response->body()
             );
         }

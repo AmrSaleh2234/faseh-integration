@@ -253,7 +253,9 @@ class InvoicePayloadBuilder
                 : round($lineAmount * ($discountPct / 100), 2);
             $afterDiscount = round($lineAmount - $discountAmount, 2);
 
-            $vatAmount = (float) ($row['tax1_value'] ?? $row['tax_value'] ?? $row['vat'] ?? 0);
+            $vatAmount = isset($row['tax1_value']) || isset($row['tax2_value'])
+                ? (float) ($row['tax1_value'] ?? 0) + (float) ($row['tax2_value'] ?? 0)
+                : (float) ($row['tax_value'] ?? $row['vat'] ?? 0);
             if ($vatAmount <= 0) {
                 // Daftra's tax1/tax2 are tax rule IDs, not percentages.
                 // summary_tax1/summary_tax2 hold the actual computed VAT amount.
@@ -277,7 +279,7 @@ class InvoicePayloadBuilder
                 'lineItemDiscount' => $discountType === 1 ? $discountPct : 0,
                 'lineItemDiscountAmount' => $discountAmount,
                 'lineItemAmountAfterDiscount' => $afterDiscount,
-                'lineItemVAT' => $vatAmount > 0 ? 15 : 0,
+                'lineItemVAT' => $afterDiscount > 0 ? round($vatAmount * 100 / $afterDiscount, 2) : 0,
                 'lineItemTotalVAT' => $vatAmount,
                 'lineItemTotal' => round($afterDiscount + $vatAmount, 2),
                 'unitOfMeasureArabic' => (string) ($row['unit_ar'] ?? 'وحدة'),

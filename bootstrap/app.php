@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'active.user' => \App\Http\Middleware\EnsureActiveUser::class,
+            'bridge.token' => \App\Http\Middleware\EnsureBridgeApiToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

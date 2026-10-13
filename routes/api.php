@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('fasah')->group(function () {
     // Manual / system sync
-    Route::get('synced-invoices', [SyncInvoiceController::class, 'index']);
-    Route::get('synced-invoices/{daftraInvoiceId}', [SyncInvoiceController::class, 'show']);
-    Route::post('sync/{daftraInvoiceId}', [SyncInvoiceController::class, 'store']);
+    // Route::middleware('bridge.token')->group(function () {
+        Route::get('synced-invoices', [SyncInvoiceController::class, 'index']);
+        Route::get('synced-invoices/{daftraInvoiceId}', [SyncInvoiceController::class, 'show']);
+        Route::post('sync/{daftraInvoiceId}', [SyncInvoiceController::class, 'store']);
+    // });
 
     // Public callbacks (Fasah Pay → your server). Whitelist Fasah IPs at firewall.
     Route::post('callbacks/invoice-notification', [FasahCallbackController::class, 'invoiceNotification']);

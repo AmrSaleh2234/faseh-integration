@@ -29,7 +29,13 @@ class InvoiceSyncService
             ->where('daftra_invoice_id', $daftraInvoiceId)
             ->first();
 
-        if ($existing && $existing->status === SyncedInvoice::STATUS_SYNCED && empty($metaOverride['force'])) {
+        if ($existing && in_array($existing->status, [
+            SyncedInvoice::STATUS_SYNCED,
+            SyncedInvoice::STATUS_WAITING,
+            SyncedInvoice::STATUS_PAID,
+            SyncedInvoice::STATUS_SETTLED,
+            SyncedInvoice::STATUS_CANCELLED,
+        ], true) && empty($metaOverride['force'])) {
             return $existing;
         }
 
@@ -132,7 +138,7 @@ class InvoiceSyncService
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function handleSettlementNotification(array $payload): ?SyncedInvoice
+    public function handleSettlementNotification(array $payload): SyncedInvoice
     {
         $fasahNo = (string) ($payload['invoiceNumber'] ?? $payload['fasahpayInvoiceNumber'] ?? '');
         $internalNo = (string) ($payload['internalInvoiceNumber'] ?? '');
@@ -143,7 +149,9 @@ class InvoiceSyncService
             ->first();
 
         if (! $record) {
-            return null;
+            throw new \RuntimeException(
+                "Synced invoice not found for Fasah settlement (fasah={$fasahNo}, internal={$internalNo})"
+            );
         }
 
         $record->fill([

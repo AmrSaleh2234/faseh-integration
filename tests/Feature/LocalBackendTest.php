@@ -79,6 +79,7 @@ class LocalBackendTest extends TestCase
         $this->assertNull($draft->number);
         $this->put(route('invoices.update', $draft), [
             'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
+            'fasah_type' => 'importer', 'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
             'discount_value' => 10, 'discount_kind' => 'amount', 'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 2, 'discount' => 10, 'tax_one' => 15, 'tax_two' => 0]],
         ])->assertRedirect();
         $invoice = $draft->fresh();
@@ -86,6 +87,7 @@ class LocalBackendTest extends TestCase
         $this->assertEquals(208.50, $invoice->total);
         $this->post(route('invoices.store'), [
             'action' => 'issue', 'client_id' => $client->id, 'invoice_date' => '2026-10-12', 'issue_date' => '2026-10-12',
+            'fasah_type' => 'importer', 'fasah_meta' => ['importer_number' => 'IMP-1', 'port' => '30'],
             'items' => [['name' => 'Second', 'unit_price' => 1, 'quantity' => 1]],
         ])->assertRedirect();
         $this->assertSame(2, Invoice::where('id', '!=', $invoice->id)->firstOrFail()->number);

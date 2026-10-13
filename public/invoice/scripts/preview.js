@@ -3,11 +3,12 @@ export function initializePreview(items) {
     const content = document.getElementById('preview-content');
 
     document.getElementById('preview').addEventListener('click', () => {
+        const client = document.getElementById('client');
         const lines = [
             ['رقم الفاتورة', document.getElementById('invoice-number').value],
             ['تاريخ الفاتورة', document.getElementById('invoice-date').value],
-            ['العميل', document.getElementById('client').value || 'لم يتم اختيار عميل'],
-            ['عدد البنود', String(items.rows.children.length)],
+            ['العميل', client.value ? client.selectedOptions[0].textContent.trim() : 'لم يتم اختيار عميل'],
+            ['عدد البنود', String([...items.rows.children].filter(row => row.querySelector('input[aria-label="البند"]')?.value.trim()).length)],
             ['الإجمالي', document.getElementById('total').textContent],
         ];
 

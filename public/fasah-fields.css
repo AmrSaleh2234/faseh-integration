@@ -1,0 +1,10 @@
+.fasah-fields { margin: 20px 0; padding: 20px; background: #fff; border: 1px solid #dce3e9; }
+.fasah-fields .section-heading { font-size: 16px; font-weight: bold; margin-bottom: 7px; }
+.fasah-fields > p { color: #657084; margin: 0 0 16px; }
+.fasah-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.fasah-field { display: grid; gap: 7px; color: #5f687a; }
+.fasah-field .field { width: 100%; min-width: 0; }
+.fasah-grid [hidden] { display: none !important; }
+.fasah-general-hint { grid-column: span 2; align-self: end; color: #657084; }
+@media (max-width: 850px) { .fasah-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .fasah-grid { grid-template-columns: 1fr; } .fasah-general-hint { grid-column: auto; } }

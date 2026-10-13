@@ -2,7 +2,7 @@
 @section('title', 'الفواتير - Titanic Ways')
 @section('section-name', 'الفواتير')
 @section('page-name', 'القائمة')
-@push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}"><link rel="stylesheet" href="{{ asset('fasah-status.css') }}">@endpush
 @section('page-actions')<div class="actions invoice-list-actions">@can('invoices.create')<a class="btn green" href="{{ route('invoices.create') }}">＋ إضافة</a>
 @endcan
  <span>{{ $invoices->total() }} فاتورة</span></div>@endsection
@@ -13,7 +13,7 @@
 <section class="invoice-results panel"><div class="invoice-results-head"><strong>النتائج</strong><div class="invoice-status-tabs">@foreach([''=>'الكل','غير مدفوعة'=>'غير مدفوعة','مدفوعة'=>'مدفوعة','مسودة'=>'مسودة'] as $value=>$label)<a class="{{ request('status','') === $value ? 'active' : '' }}" href="{{ route('invoices.index',['status'=>$value]) }}">{{ $label }}</a>
 @endforeach
 </div></div><div id="invoice-rows">
-@forelse($invoices as $invoice)<article class="invoice-result-row"><div class="invoice-result-identity"><div class="invoice-result-meta">{{ $invoice->number ? '#'.$invoice->number : 'مسودة #'.$invoice->id }} — {{ $invoice->invoice_date?->format('d/m/Y') }}</div><a href="{{ route('invoices.show',$invoice) }}">{{ $invoice->client?->business_name ?? 'بدون عميل' }}</a></div><div class="invoice-result-event"><b>{{ $invoice->status === 'draft' ? 'مسودة' : 'صادرة' }}</b><small>{{ $invoice->created_at->format('d/m/Y') }}</small></div><div class="invoice-result-amount"><strong>﷼ {{ number_format($invoice->total,2) }}</strong><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span></div><div class="invoice-result-menu"><a href="{{ route('invoices.show',$invoice) }}">عرض</a> @can('invoices.edit')<a href="{{ route('invoices.edit',$invoice) }}">تعديل</a>
+@forelse($invoices as $invoice)<article class="invoice-result-row"><div class="invoice-result-identity"><div class="invoice-result-meta">{{ $invoice->number ? '#'.$invoice->number : 'مسودة #'.$invoice->id }} — {{ $invoice->invoice_date?->format('d/m/Y') }}</div><a href="{{ route('invoices.show',$invoice) }}">{{ $invoice->client?->business_name ?? 'بدون عميل' }}</a></div><div class="invoice-result-event"><b>{{ $invoice->status === 'draft' ? 'مسودة' : 'صادرة' }}</b><small>{{ $invoice->created_at->format('d/m/Y') }}</small></div><div class="invoice-result-amount"><strong>﷼ {{ number_format($invoice->total,2) }}</strong><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span>@if($invoice->status === 'issued')<small class="fasah-sync-badge fasah-sync-list {{ $invoice->fasahSync?->status }}">{{ ['pending'=>'قيد المزامنة','sending'=>'جارٍ الإرسال','synced'=>'تمت المزامنة','failed'=>'فشلت المزامنة','uncertain'=>'تحتاج مراجعة'][$invoice->fasahSync?->status] ?? 'لم تبدأ' }}</small>@endif</div><div class="invoice-result-menu"><a href="{{ route('invoices.show',$invoice) }}">عرض</a> @can('invoices.edit')<a href="{{ route('invoices.edit',$invoice) }}">تعديل</a>
 @endcan
 </div></article>
 @empty

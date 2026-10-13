@@ -14,7 +14,7 @@ class LocalReadService
 {
     public function invoices(Request $request)
     {
-        $query = Invoice::with('client')->latest();
+        $query = Invoice::with('client', 'fasahSync')->latest();
         if ($request->filled('q')) $query->where(fn ($q) => $q->where('number', 'like', '%'.$request->query('q').'%')->orWhereHas('client', fn ($c) => $c->where('business_name', 'like', '%'.$request->query('q').'%')));
         if ($request->filled('client')) $query->whereHas('client', fn ($q) => $q->where('business_name', 'like', '%'.$request->query('client').'%'));
         if ($request->filled('number')) $query->where('number', 'like', '%'.$request->query('number').'%');
@@ -61,11 +61,11 @@ class LocalReadService
     }
     public function invoiceDetails(Invoice $invoice): Invoice
     {
-        return $invoice->load('client', 'salesStaff', 'items', 'customFields', 'payments', 'attachments');
+        return $invoice->load('client', 'salesStaff', 'items', 'customFields', 'payments', 'attachments', 'fasahSync');
     }
     public function invoiceForEditing(Invoice $invoice): Invoice
     {
-        return $invoice->load('client', 'items', 'customFields', 'attachments');
+        return $invoice->load('client', 'items', 'customFields', 'attachments', 'fasahSync');
     }
 
     public function activities(Request $request)

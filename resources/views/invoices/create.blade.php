@@ -6,10 +6,12 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('invoice-design.css') }}">
+    <link rel="stylesheet" href="{{ asset('fasah-fields.css') }}">
 @endpush
 
 @push('scripts')
     <script type="module" src="{{ asset('invoice-design.js') }}"></script>
+    <script defer src="{{ asset('fasah-fields.js') }}"></script>
 @endpush
 
 @section('page-actions')
@@ -32,6 +34,8 @@
         @include('invoices.partials.details')
         @include('invoices.partials.customer')
     </div>
+
+    @include('invoices.partials.fasah-fields')
 
     @include('invoices.partials.items')
 

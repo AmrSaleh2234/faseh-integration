@@ -56,11 +56,12 @@
 .invoice-view-tabs button { border: 0; border-left: 1px solid #e7ebef; padding: 15px 25px; color: #657086; background: white; }
 .invoice-view-tabs button.active { border-bottom: 3px solid #12a563; color: #21955d; }
 .invoice-view-panel { background: #c6cdd5; min-height: 550px; padding: 20px 12px; }
-.invoice-info-panel { background: white; border: 1px solid #dce2e9; }
+.invoice-info-panel { background: white; border: 1px solid #dce2e9; min-height: 0; }
 .invoice-info-panel h2 { font-size: 17px; font-weight: normal; border-bottom: 1px solid #e4e8ed; padding-bottom: 13px; }
 .invoice-info-panel dl { display: grid; grid-template-columns: 150px 1fr; gap: 15px; max-width: 650px; }
 .invoice-info-panel dt { color: #8390a0; }
 .invoice-info-panel dd { margin: 0; }
+.invoice-info-panel .table-scroll { max-width: 100%; overflow-x: auto; }
 .invoice-local-notice { background: #e8f7ee; color: #247d4d; border: 1px solid #b8e1c6; padding: 12px 15px; margin: 15px 0; }
 
 /* Issued document */

@@ -10,7 +10,7 @@
     </div>
 
     <div class="editor" id="notes" contenteditable="true" aria-label="الملاحظات والشروط">@if($invoice?->notes){{ $invoice->notes }}@else
-        <p>الرصيد المستحق : فقط &nbsp; {%unpaid_spelled%}</p>
+        <p>الرصيد المستحق حسب إجمالي الفاتورة والمدفوعات المسجلة.</p>
 
         <div class="banks">
             <div>

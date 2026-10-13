@@ -2,7 +2,8 @@
 @section('title', 'عرض الفاتورة - Titanic Ways')
 @section('section-name', 'الفواتير')
 @section('page-name', $invoice->number ? 'فاتورة #'.$invoice->number : 'مسودة #'.$invoice->id)
-@push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('invoice-pages.css') }}"><link rel="stylesheet" href="{{ asset('fasah-status.css') }}">@endpush
+@push('scripts')<script defer src="{{ asset('fasah-status.js') }}"></script>@endpush
 @section('page-actions')<div class="actions invoice-view-actions"><div class="invoice-view-title"><div><h1>{{ $invoice->number ? 'الفاتورة #'.$invoice->number : 'مسودة #'.$invoice->id }}</h1></div><div><strong>{{ $invoice->client?->business_name ?? 'بدون عميل' }}</strong></div><span class="invoice-badge {{ $invoice->display_status === 'مدفوعة' ? 'paid' : 'unpaid' }}">{{ $invoice->display_status }}</span></div><button class="btn blue" type="button" onclick="window.print()">▣ طباعة</button></div>@endsection
 @section('content')
 <div class="invoice-view-toolbar">@can('invoices.edit')<a class="btn gray small" href="{{ route('invoices.edit',$invoice) }}">تعديل</a>
@@ -12,6 +13,7 @@
 
 @endif
 </div>
+@if($invoice->status === 'issued')@include('invoices.partials.fasah-status')@endif
 <section class="invoice-view-panel invoice-info-panel panel"><h2>تفاصيل الفاتورة</h2><dl><dt>العميل</dt><dd>@if($invoice->client)@can('clients.view')<a href="{{ route('clients.show',$invoice->client) }}">{{ $invoice->client->business_name }}</a>
 @else
 {{ $invoice->client->business_name }}
@@ -30,7 +32,7 @@
 </dl></section>
 @endif
 
-@if($invoice->notes)<section class="invoice-view-panel invoice-info-panel panel"><h2>الملاحظات</h2><p style="white-space:pre-wrap">{{ $invoice->notes }}</p></section>
+@if($invoice->notes)<section class="invoice-view-panel invoice-info-panel panel"><h2>الملاحظات</h2><p style="white-space:pre-wrap">{{ str_replace('{%unpaid_spelled%}', '﷼ '.number_format($invoice->balance, 2), $invoice->notes) }}</p></section>
 @endif
 
 <section class="invoice-view-panel invoice-info-panel panel"><h2>المدفوعات</h2>@forelse($invoice->payments as $payment)<p>{{ $payment->paid_on->format('d/m/Y') }} — {{ $payment->method }} — ﷼ {{ number_format($payment->amount,2) }} {{ $payment->reference }}</p>

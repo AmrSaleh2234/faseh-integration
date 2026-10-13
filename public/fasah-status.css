@@ -1,0 +1,9 @@
+.fasah-sync-panel { padding: 15px 18px; margin-bottom: 14px; background: #fff; border: 1px solid #dce3e9; }
+.fasah-sync-panel > div { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fasah-sync-panel p { margin: 9px 0 0; color: #5c6879; overflow-wrap: anywhere; }
+.fasah-sync-panel form { margin-top: 12px; }
+.fasah-sync-badge { padding: 5px 9px; font-size: 12px; background: #edf1f5; color: #526074; }
+.fasah-sync-badge.synced { background: #dff5e7; color: #187b49; }
+.fasah-sync-badge.failed, .fasah-sync-badge.uncertain { background: #fff0e9; color: #9b4937; }
+.fasah-sync-badge.pending, .fasah-sync-badge.sending { background: #fff5db; color: #8c6a1b; }
+.fasah-sync-list { display: block; width: fit-content; margin-top: 5px; }

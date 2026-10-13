@@ -7,3 +7,7 @@ document.querySelectorAll('.side-toggle').forEach(button => {
         button.setAttribute('aria-expanded', String(!subnav.hidden));
     });
 });
+
+document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+    document.getElementById('sidebar')?.classList.toggle('open');
+});

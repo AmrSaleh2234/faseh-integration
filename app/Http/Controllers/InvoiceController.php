@@ -6,6 +6,7 @@ use App\Actions\RecordInvoicePayment;
 use App\Actions\SaveInvoice;
 use App\Actions\StoreAttachment;
 use App\Models\Invoice;
+use App\Services\FasahPay\SyncLocalInvoice;
 use App\Services\LocalReadService;
 use Illuminate\Http\Request;
 
@@ -23,14 +24,23 @@ class InvoiceController extends Controller
         $data = $this->validated($request);
         $invoice = $action->save($data, null, $request->user());
         foreach ($request->file('attachments', []) as $file) $files->store($invoice, $file, $request->user());
-        return redirect()->route('invoices.show', $invoice)->with('status', 'تم حفظ الفاتورة.');
+        return redirect()->route('invoices.show', $invoice)->with('status', $invoice->status === 'issued' ? 'تم إصدار الفاتورة محليًا. مزامنة Fasah قيد التنفيذ.' : 'تم حفظ المسودة.');
     }
     public function update(Request $request, Invoice $invoice, SaveInvoice $action, StoreAttachment $files)
     {
         $data = $this->validated($request);
-        $action->update($invoice, $data, $request->user());
+        $invoice = $action->update($invoice, $data, $request->user());
         foreach ($request->file('attachments', []) as $file) $files->store($invoice, $file, $request->user());
-        return redirect()->route('invoices.show', $invoice)->with('status', 'تم تحديث الفاتورة.');
+        return redirect()->route('invoices.show', $invoice)->with('status', $data['action'] === 'issue' ? 'تم إصدار الفاتورة محليًا. مزامنة Fasah قيد التنفيذ.' : 'تم تحديث الفاتورة.');
+    }
+    public function fasahStatus(Invoice $invoice, SyncLocalInvoice $sync)
+    {
+        return response()->json($sync->status($invoice));
+    }
+    public function retryFasah(Invoice $invoice, SyncLocalInvoice $sync)
+    {
+        $sync->retryInvoice($invoice);
+        return redirect()->route('invoices.show', $invoice)->with('status', 'أُضيفت محاولة مزامنة Fasah إلى قائمة الانتظار.');
     }
     public function payment(Request $request, Invoice $invoice, RecordInvoicePayment $action)
     {
@@ -57,6 +67,9 @@ class InvoiceController extends Controller
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'], 'items.*.quantity' => ['nullable', 'numeric', 'min:0'], 'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.tax_one' => ['nullable', 'in:0,15'], 'items.*.tax_two' => ['nullable', 'in:0,15'],
             'custom_fields' => ['nullable', 'array'], 'custom_fields.*.name' => ['nullable', 'string', 'max:255'], 'custom_fields.*.value' => ['nullable', 'string'],
+            'fasah_type' => ['nullable', 'in:general,billoflading,declaration,custombroker,importer,shippingagent'],
+            'fasah_meta' => ['nullable', 'array'],
+            'fasah_meta.*' => ['nullable', 'string', 'max:255'],
             'attachments' => ['nullable', 'array'], 'attachments.*' => ['file', 'max:10240'],
         ]);
     }

@@ -8,7 +8,6 @@ initializeCustomFields();
 
 initializeTabsAndEditor();
 initializePreview(items);
-document.getElementById('sidebar-toggle')?.addEventListener('click', () => document.getElementById('sidebar')?.classList.toggle('open'));
 document.getElementById('invoice-form')?.addEventListener('submit', event => {
     document.querySelectorAll('#item-rows .item-row').forEach((row, index) => {
         for (const [selector, field] of [['input[aria-label="البند"]', 'name'], ['input[aria-label="الوصف"]', 'description'], ['.price', 'unit_price'], ['.quantity', 'quantity'], ['.item-discount', 'discount'], ['.tax-one', 'tax_one'], ['.tax-two', 'tax_two']]) {
