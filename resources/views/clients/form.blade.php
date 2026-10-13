@@ -3,7 +3,7 @@
 @section('title', ($editing ? 'تعديل العميل' : 'إضافة عميل').' - Titanic Ways')
 @section('section-name', 'العملاء')
 @section('page-name', $editing ? 'تعديل العميل' : 'إضافة عميل')
-@push('styles')<link rel="stylesheet" href="{{ asset('clients.css') }}">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('clients.css') }}?v=20261013">@endpush
 @section('page-actions')<div class="actions"><button class="btn green" type="submit" form="client-form">حفظ</button><a class="btn gray" href="{{ $editing ? route('clients.show', $client) : route('clients.index') }}">إلغاء</a></div>@endsection
 @section('content')
 <form id="client-form" method="post" enctype="multipart/form-data" action="{{ $editing ? route('clients.update', $client) : route('clients.store') }}">@csrf @if($editing)@method('PUT')

@@ -43,12 +43,13 @@
 .client-card h3 {font-size:14px;font-weight:normal;margin:24px 0 15px;padding-bottom:8px;border-bottom:1px solid #e5e9ef}
 .client-field {margin-bottom:16px}
 .client-field>label {display:block;margin-bottom:7px;color:#626a79}
-.client-field input,.client-field select,.client-field textarea,.contact-row input {width:100%;min-height:39px;padding:8px 11px;border:1px solid #d7dee5;background:#fff;color:#374255;border-radius:2px}
+.client-field input:not([type="radio"]):not([type="checkbox"]),.client-field select,.client-field textarea,.contact-row input {width:100%;min-height:39px;padding:8px 11px;border:1px solid #d7dee5;background:#fff;color:#374255;border-radius:2px}
 .client-field textarea {resize:vertical}
 .client-field em {color:#df4d52;font-style:normal}
 .client-pair {display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .radio-row {display:flex;gap:24px;padding:9px 0}
 .radio-row label,.client-check {display:flex;align-items:center;gap:6px;color:#566072}
+.radio-row input[type="radio"],.client-check input[type="checkbox"] {width:16px;height:16px;min-height:0;margin:0;padding:0;flex:none;accent-color:#14a465}
 .client-check {margin:12px 0 20px}
 .map-placeholder {height:160px;background:#eef2f4;border:1px solid #d9e1e7;display:grid;place-content:center;text-align:center;color:#8793a3;line-height:2}
 .client-section-heading {display:flex;align-items:center;justify-content:space-between}
