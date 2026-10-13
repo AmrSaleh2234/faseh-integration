@@ -49,8 +49,8 @@ class LocalInvoicePayloadBuilder
                 }
             }
         }
-        if ($type === 'general' && (empty($client->email) || empty($client->mobile ?: $client->phone))) {
-            throw ValidationException::withMessages(['client_id' => 'الفاتورة العامة تحتاج بريد العميل وجواله أو هاتفه.']);
+        if ($type === 'general' && (empty($client->email) || $this->builder->normalizeConsumerMobile((string) ($client->mobile ?: $client->phone)) === null)) {
+            throw ValidationException::withMessages(['client_id' => 'الفاتورة العامة تحتاج بريد العميل وجوالًا سعوديًا صحيحًا يبدأ بـ 05.']);
         }
         if ($total - $paidDeposit <= 0) {
             throw ValidationException::withMessages(['deposit_amount' => 'يجب أن يكون للفاتورة رصيد مستحق لإرسالها إلى Fasah.']);

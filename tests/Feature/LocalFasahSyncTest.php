@@ -106,6 +106,10 @@ class LocalFasahSyncTest extends TestCase
             app(SyncLocalInvoice::class)->execute($invoice->id);
             $this->assertSame('synced', $invoice->fasahSync->fresh()->status);
             $this->assertSame('LOCAL-'.$invoice->number, $invoice->fasahSync->fresh()->request_payload['internalInvoiceNumber']);
+            if ($invoice->fasah_type === 'declaration') {
+                $this->assertSame('30', $invoice->fasahSync->fresh()->request_payload['port']);
+                $this->assertArrayNotHasKey('declarationPort', $invoice->fasahSync->fresh()->request_payload);
+            }
         }
         Http::assertSentCount(6);
     }
@@ -140,8 +144,36 @@ class LocalFasahSyncTest extends TestCase
         $payload = $invoice->fasahSync->fresh()->request_payload;
         $this->assertSame('1010123456', $payload['companyRegistrationNumber']);
         $this->assertSame('123456789012345', $payload['customerVATNumber']);
-        $this->assertSame('+966564882976', $payload['consumerMobile']);
+        $this->assertSame('0564882976', $payload['consumerMobile']);
         $this->assertSame('synced', $invoice->fasahSync->fresh()->status);
+    }
+
+    public function test_general_invoice_omits_empty_optional_numbers_and_rejects_invalid_mobile_before_issue(): void
+    {
+        $this->actingAs($this->owner());
+        $client = $this->client();
+        $client->update(['mobile' => '+966 56 488 2976']);
+        $invoice = $this->issue($client, 'general');
+        $this->configureSandbox();
+        Http::fake(fn () => Http::response(['statusCode' => '00000', 'fasahpayInvoiceNumber' => 'F-GENERAL']));
+
+        app(SyncLocalInvoice::class)->execute($invoice->id);
+
+        $payload = $invoice->fasahSync->fresh()->request_payload;
+        $this->assertSame('0564882976', $payload['consumerMobile']);
+        $this->assertArrayNotHasKey('companyRegistrationNumber', $payload);
+        $this->assertArrayNotHasKey('customerVATNumber', $payload);
+
+        $client->update(['mobile' => '+966123456789']);
+        $this->post(route('invoices.store'), [
+            'action' => 'issue',
+            'client_id' => $client->id,
+            'invoice_date' => '2026-10-13',
+            'issue_date' => '2026-10-13',
+            'fasah_type' => 'general',
+            'items' => [['name' => 'Freight', 'unit_price' => 100, 'quantity' => 1]],
+        ])->assertSessionHasErrors('client_id');
+        $this->assertSame(1, LocalFasahSync::count());
     }
 
     public function test_success_requires_fasah_number_and_retry_is_authorized(): void

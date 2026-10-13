@@ -49,7 +49,6 @@ class InvoicePayloadBuilder
 
         $header = [
             'billerVATNumber' => (string) config('fasahpay.biller_vat_number'),
-            'customerVATNumber' => (string) ($meta['customer_vat'] ?? ''),
             'internalInvoiceNumber' => (string) ($invoice['no'] ?? $invoice['number'] ?? $invoice['id']),
             'invoiceDescription' => (string) ($invoice['notes'] ?? $invoice['summary'] ?? 'Invoice from Daftra'),
             'invoiceIssueDate' => $issueDate,
@@ -60,6 +59,10 @@ class InvoicePayloadBuilder
             'grandTotal' => $totals['grandTotal'],
             'item' => $lineItems,
         ];
+
+        if (trim((string) ($meta['customer_vat'] ?? '')) !== '') {
+            $header['customerVATNumber'] = (string) $meta['customer_vat'];
+        }
 
         if (empty($header['billerVATNumber'])) {
             throw new InvalidArgumentException('FASAHPAY_BILLER_VAT_NUMBER is required in .env');
@@ -145,20 +148,33 @@ class InvoicePayloadBuilder
             ?? trim(($client['first_name'] ?? '').' '.($client['last_name'] ?? ''))
             ?: 'N/A');
         $consumerEmail = (string) ($meta['consumer_email'] ?? $client['email'] ?? '');
-        $consumerMobile = (string) ($meta['consumer_mobile'] ?? $client['phone2'] ?? $client['phone1'] ?? '');
+        $consumerMobile = $this->normalizeConsumerMobile((string) ($meta['consumer_mobile'] ?? $client['phone2'] ?? $client['phone1'] ?? ''));
 
-        if ($consumerEmail === '' || $consumerMobile === '') {
+        if ($consumerEmail === '' || $consumerMobile === null) {
             throw new InvalidArgumentException(
-                'general invoice requires consumer_email and consumer_mobile (missing on Daftra Client and not passed via --bl-like meta overrides).'
+                'general invoice requires consumer_email and a Saudi consumer_mobile in 05XXXXXXXX format.'
             );
         }
 
-        return array_merge($header, [
+        $payload = array_merge($header, [
             'companyName' => $companyName,
-            'companyRegistrationNumber' => (string) ($meta['company_registration_number'] ?? ''),
             'consumerEmail' => $consumerEmail,
             'consumerMobile' => $consumerMobile,
         ]);
+
+        if (trim((string) ($meta['company_registration_number'] ?? '')) !== '') {
+            $payload['companyRegistrationNumber'] = (string) $meta['company_registration_number'];
+        }
+
+        return $payload;
+    }
+
+    public function normalizeConsumerMobile(string $mobile): ?string
+    {
+        $compact = preg_replace('/[\s().-]+/u', '', trim($mobile)) ?? trim($mobile);
+        $local = preg_replace('/^(?:\+?966|00966)/', '0', $compact) ?? $compact;
+
+        return preg_match('/^05[0-9]{8}$/D', $local) ? $local : null;
     }
 
     /**
@@ -174,7 +190,7 @@ class InvoicePayloadBuilder
             'declarationNumber' => (string) $meta['declaration_number'],
             'declarationDate' => $this->formatDate($meta['declaration_date']),
             'declarationType' => (int) $meta['declaration_type'],
-            'declarationPort' => (string) $meta['port'],
+            'port' => (string) $meta['port'],
             'billofLadingNo' => (string) ($meta['bill_of_lading'] ?? ''),
         ]);
     }
